@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import PageHero from "@/components/ui/PageHero";
 import AboutStory from "@/components/sections/AboutStory";
 import ValuesGrid from "@/components/sections/ValuesGrid";
+import TeamSection from "@/components/sections/TeamSection";
 import Gallery from "@/components/sections/Gallery";
 import CTABand from "@/components/sections/CTABand";
 
@@ -21,6 +22,7 @@ export default function AboutPage() {
       />
       <AboutStory />
       <ValuesGrid />
+      <TeamSection />
       <Gallery />
       <CTABand />
     </>

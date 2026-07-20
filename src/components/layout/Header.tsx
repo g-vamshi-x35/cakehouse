@@ -4,13 +4,14 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { FiMenu, FiX, FiShoppingBag } from "react-icons/fi";
+import { FiMenu, FiX, FiShoppingBag, FiUser } from "react-icons/fi";
 import { useCart } from "@/components/cart/CartContext";
 import CartDrawer from "@/components/cart/CartDrawer";
 
 const NAV_LINKS = [
   { href: "/", label: "Home" },
   { href: "/menu", label: "Menu" },
+  { href: "/custom-cake", label: "Custom Cake" },
   { href: "/about", label: "About" },
   { href: "/classes", label: "Classes" },
   { href: "/contact", label: "Contact" },
@@ -60,7 +61,7 @@ export default function Header() {
             </span>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-8">
+          <nav className="hidden md:flex items-center gap-5 lg:gap-7">
             {NAV_LINKS.map((link) => {
               const active = pathname === link.href;
               return (
@@ -81,6 +82,13 @@ export default function Header() {
           </nav>
 
           <div className="flex items-center gap-2">
+            <Link
+              href="/account"
+              className="hidden sm:inline-flex p-2 text-brown hover:text-rose transition-colors"
+              aria-label="My account"
+            >
+              <FiUser size={22} />
+            </Link>
             <button
               onClick={openCart}
               className="relative p-2 text-brown hover:text-rose transition-colors"
@@ -138,6 +146,13 @@ export default function Header() {
               {link.label}
             </Link>
           ))}
+          <Link
+            href="/account"
+            onClick={() => setMobileOpen(false)}
+            className="font-heading text-2xl text-brown"
+          >
+            My Account
+          </Link>
           <Link
             href="/menu"
             onClick={() => setMobileOpen(false)}

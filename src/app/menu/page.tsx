@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import MenuBrowser from "@/components/sections/MenuBrowser";
 import PageHero from "@/components/ui/PageHero";
+import { getAllProducts } from "@/lib/data/products";
 
 export const metadata: Metadata = {
   title: "Menu | Cake House",
@@ -8,7 +9,9 @@ export const metadata: Metadata = {
     "Browse Cake House's full menu — regular & customized cakes, pizza, samosa and patties. 100% vegetarian, 100% egg-free.",
 };
 
-export default function MenuPage() {
+export default async function MenuPage() {
+  const products = await getAllProducts();
+
   return (
     <>
       <PageHero
@@ -16,7 +19,7 @@ export default function MenuPage() {
         title="Crafted Fresh, Every Single Day"
         subtitle="From classic flavours to fully customized theme cakes and quick snacks — everything is made fresh in-house."
       />
-      <MenuBrowser />
+      <MenuBrowser products={products} />
     </>
   );
 }

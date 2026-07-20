@@ -4,6 +4,8 @@ import "./globals.css";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import SmoothScrollProvider from "@/components/layout/SmoothScrollProvider";
+import LoadingScreen from "@/components/layout/LoadingScreen";
+import ToastProvider from "@/components/layout/ToastProvider";
 import { CartProvider } from "@/components/cart/CartContext";
 
 const playfair = Playfair_Display({
@@ -37,6 +39,8 @@ export default function RootLayout({
       className={`${playfair.variable} ${lato.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-cream-light text-ink">
+        <LoadingScreen />
+        <ToastProvider />
         <CartProvider>
           <SmoothScrollProvider>
             <Header />

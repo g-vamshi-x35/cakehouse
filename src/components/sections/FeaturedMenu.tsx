@@ -1,10 +1,10 @@
 import SectionReveal from "@/components/ui/SectionReveal";
 import ProductCard from "@/components/ui/ProductCard";
 import Button from "@/components/ui/Button";
-import { getFeaturedItems } from "@/data/menu";
+import { getFeaturedProducts } from "@/lib/data/products";
 
-export default function FeaturedMenu() {
-  const items = getFeaturedItems();
+export default async function FeaturedMenu() {
+  const products = await getFeaturedProducts();
 
   return (
     <section className="bg-cream py-20 md:py-28">
@@ -19,9 +19,9 @@ export default function FeaturedMenu() {
         </SectionReveal>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {items.map((item, i) => (
-            <SectionReveal key={item.id} delay={(i % 3) * 0.1}>
-              <ProductCard item={item} />
+          {products.map((product, i) => (
+            <SectionReveal key={product.id} delay={(i % 3) * 0.1}>
+              <ProductCard product={product} />
             </SectionReveal>
           ))}
         </div>

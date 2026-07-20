@@ -6,17 +6,20 @@ import gsap from "gsap";
 import Button from "@/components/ui/Button";
 import { FiArrowDown } from "react-icons/fi";
 
-export default function Hero() {
+export default function Hero({ videoSrc }: { videoSrc?: string }) {
   const rootRef = useRef<HTMLDivElement>(null);
+  const mediaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const ctx = gsap.context(() => {
       const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
-      tl.fromTo(
-        ".hero-eyebrow",
-        { opacity: 0, y: 20 },
-        { opacity: 1, y: 0, duration: 0.7 }
-      )
+      tl.fromTo(mediaRef.current, { scale: 1.15 }, { scale: 1, duration: 1.6, ease: "power2.out" })
+        .fromTo(
+          ".hero-eyebrow",
+          { opacity: 0, y: 20 },
+          { opacity: 1, y: 0, duration: 0.7 },
+          "-=1.2"
+        )
         .fromTo(
           ".hero-title",
           { opacity: 0, y: 40 },
@@ -44,13 +47,26 @@ export default function Hero() {
       ref={rootRef}
       className="relative min-h-[92vh] flex items-end md:items-center overflow-hidden"
     >
-      <Image
-        src="/images/hero/hero-purple-ombre-cake.jpg"
-        alt="Handcrafted purple ombre butterfly cake by Cake House"
-        fill
-        priority
-        className="object-cover object-[65%_30%]"
-      />
+      <div ref={mediaRef} className="absolute inset-0">
+        {videoSrc ? (
+          <video
+            src={videoSrc}
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover object-[65%_30%]"
+          />
+        ) : (
+          <Image
+            src="/images/hero/hero-purple-ombre-cake.jpg"
+            alt="Handcrafted purple ombre butterfly cake by Cake House"
+            fill
+            priority
+            className="object-cover object-[65%_30%]"
+          />
+        )}
+      </div>
       <div className="absolute inset-0 bg-gradient-to-t from-ink/85 via-ink/45 to-ink/20" />
       <div className="absolute inset-0 bg-gradient-to-r from-ink/60 via-transparent to-transparent" />
 

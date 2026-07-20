@@ -28,11 +28,11 @@ export default function AboutTeaser() {
             <br className="hidden sm:block" /> Your Celebration
           </h2>
           <p className="text-ink/75 leading-relaxed max-w-lg">
-            {business.subBrand} has been baking {business.name.toLowerCase()}
-            &apos;s cakes with warmth and care — every design is handcrafted to
-            order, from birthday cakes and doll cakes to full wedding tiers.
-            Nothing is store-bought; every layer, flower and detail is made
-            fresh, right here.
+            {business.subBrand} has been baking {business.name}&apos;s cakes with
+            warmth and care — every design is handcrafted to order, from
+            birthday cakes and doll cakes to full wedding tiers. Nothing is
+            store-bought; every layer, flower and detail is made fresh, right
+            here.
           </p>
           <div className="flex flex-wrap gap-3 mt-6">
             {business.badges.map((badge) => (
