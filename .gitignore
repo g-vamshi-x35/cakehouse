@@ -32,9 +32,14 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # vercel
 .vercel
+
+# raw source assets (not for publishing — curated copies live in public/images)
+/cake data/
+/cake desigin/
 
 # typescript
 *.tsbuildinfo
