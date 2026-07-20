@@ -44,15 +44,6 @@ const CAKE_FLAVOURS = [
   "Pineapple",
 ];
 
-const GALLERY = [
-  "/images/gallery/gallery-01.jpg",
-  "/images/gallery/gallery-02.jpg",
-  "/images/gallery/gallery-03.jpg",
-  "/images/gallery/gallery-04.jpg",
-  "/images/gallery/gallery-05.jpg",
-  "/images/gallery/gallery-06.jpg",
-];
-
 function weightOptionsFrom(price500?: number, price1000?: number): WeightOption[] | undefined {
   if (!price500) return undefined;
   const options: WeightOption[] = [{ label: "0.5 kg", price: price500 }];
@@ -77,7 +68,7 @@ export const products: Product[] = [
     description:
       "A timeless classic — soft, moist vanilla sponge layered with light vanilla cream. Simple, comforting and always a crowd-pleaser.",
     ingredients: `Refined flour, sugar, fresh cream, vegetable oil, vanilla essence, baking essentials. ${EGGLESS_NOTE}`,
-    images: [GALLERY[0], GALLERY[1]],
+    images: [],
     price: 290,
     weightOptions: weightOptionsFrom(290, 550),
     flavours: ["Vanilla"],
@@ -91,7 +82,7 @@ export const products: Product[] = [
     description:
       "Fresh pineapple chunks folded into a soft vanilla sponge, finished with a light whipped cream and pineapple glaze.",
     ingredients: `Refined flour, fresh cream, pineapple compote, sugar, vegetable oil, baking essentials. ${EGGLESS_NOTE}`,
-    images: [GALLERY[1], GALLERY[2]],
+    images: [],
     price: 290,
     weightOptions: weightOptionsFrom(290, 590),
     flavours: ["Pineapple"],
@@ -105,7 +96,7 @@ export const products: Product[] = [
     description:
       "Caramelised butterscotch sponge layered with praline crunch and butterscotch cream — rich, nutty and irresistible.",
     ingredients: `Refined flour, butterscotch praline, fresh cream, sugar, vegetable oil, baking essentials. ${EGGLESS_NOTE}`,
-    images: [GALLERY[2], GALLERY[3]],
+    images: [],
     price: 290,
     weightOptions: weightOptionsFrom(290, 590),
     flavours: ["Butterscotch"],
@@ -119,7 +110,7 @@ export const products: Product[] = [
     description:
       "The bestseller — chocolate sponge soaked lightly, layered with whipped cream, cherries and chocolate shavings.",
     ingredients: `Refined flour, cocoa, fresh cream, cherries, chocolate shavings, sugar, vegetable oil, baking essentials. ${EGGLESS_NOTE}`,
-    images: [GALLERY[3], GALLERY[4]],
+    images: [],
     price: 290,
     weightOptions: weightOptionsFrom(290, 590),
     flavours: ["Black Forest"],
@@ -134,7 +125,7 @@ export const products: Product[] = [
     description:
       "A deep, indulgent chocolate sponge layered with silky chocolate ganache — made for true chocolate lovers.",
     ingredients: `Refined flour, cocoa, chocolate ganache, fresh cream, sugar, vegetable oil, baking essentials. ${EGGLESS_NOTE}`,
-    images: [GALLERY[4], GALLERY[5]],
+    images: [],
     price: 290,
     weightOptions: weightOptionsFrom(290, 590),
     flavours: ["Chocolate"],
@@ -149,7 +140,7 @@ export const products: Product[] = [
     description:
       "Decadent dark chocolate sponge enrobed in glossy truffle ganache — for the serious chocolate connoisseur.",
     ingredients: `Refined flour, dark cocoa, truffle ganache, fresh cream, sugar, vegetable oil, baking essentials. ${EGGLESS_NOTE}`,
-    images: [GALLERY[5], GALLERY[0]],
+    images: [],
     price: 450,
     weightOptions: weightOptionsFrom(450, 900),
     flavours: ["Dark Chocolate"],
@@ -162,9 +153,9 @@ export const products: Product[] = [
     type: "cake",
     category: "regular-cakes",
     description:
-      "Soft vanilla sponge studded with colourful candied tutti frutti bits — a fun, fruity favourite.",
-    ingredients: `Refined flour, tutti frutti, fresh cream, sugar, vegetable oil, baking essentials. ${EGGLESS_NOTE}`,
-    images: [GALLERY[0], GALLERY[2]],
+      "Soft vanilla sponge studded with colourful candied tutti frutti bits, finished with a fresh fruit topping — a fun, fruity favourite.",
+    ingredients: `Refined flour, tutti frutti, fresh cream, seasonal fruit, sugar, vegetable oil, baking essentials. ${EGGLESS_NOTE}`,
+    images: ["/images/menu/menu-fruit-cake.jpg"],
     price: 290,
     weightOptions: weightOptionsFrom(290, 590),
     flavours: ["Tutti Frutti"],
@@ -178,7 +169,7 @@ export const products: Product[] = [
     description:
       "Silky red velvet sponge layered with cream cheese frosting — elegant, smooth and beautifully balanced.",
     ingredients: `Refined flour, cocoa, cream cheese frosting, fresh cream, sugar, vegetable oil, food colour, baking essentials. ${EGGLESS_NOTE}`,
-    images: [GALLERY[1], GALLERY[3]],
+    images: [],
     price: 350,
     weightOptions: weightOptionsFrom(350, 700),
     flavours: ["Red Velvet"],
@@ -193,7 +184,7 @@ export const products: Product[] = [
     description:
       "Chocolate sponge wrapped in a ring of Kit Kat fingers, piled high with chocolates and drizzled ganache.",
     ingredients: `Refined flour, cocoa, chocolate ganache, wafer chocolates, fresh cream, sugar, vegetable oil, baking essentials. ${EGGLESS_NOTE}`,
-    images: [GALLERY[2], GALLERY[4]],
+    images: [],
     price: 550,
     weightOptions: weightOptionsFrom(550, 1000),
     flavours: ["Chocolate"],
@@ -207,7 +198,7 @@ export const products: Product[] = [
     description:
       "A fusion favourite — soft sponge soaked in rasmalai milk, layered with malai cream and chopped pistachios.",
     ingredients: `Refined flour, milk, rasmalai, fresh cream, pistachios, sugar, vegetable oil, baking essentials. ${EGGLESS_NOTE}`,
-    images: [GALLERY[3], GALLERY[5]],
+    images: [],
     price: 290,
     weightOptions: weightOptionsFrom(290, 590),
     flavours: ["Rasmalai"],
@@ -221,7 +212,7 @@ export const products: Product[] = [
     description:
       "A show-stopping princess doll cake — soft sponge skirt piped by hand with detailed cream rosettes and a doll of your choice.",
     ingredients: `Refined flour, fresh cream, fondant/cream detailing, sugar, vegetable oil, baking essentials. ${EGGLESS_NOTE} Final design & price depend on complexity.`,
-    images: ["/images/menu/menu-doll-barbie-cake.jpg", GALLERY[0], GALLERY[2]],
+    images: ["/images/menu/menu-doll-barbie-cake.jpg"],
     price: 350,
     weightOptions: weightOptionsFrom(350, 650),
     flavours: CAKE_FLAVOURS,
@@ -237,7 +228,7 @@ export const products: Product[] = [
     description:
       "A fun 3D car-shaped cake, hand-sculpted and piped in cream — perfect for a little one's birthday.",
     ingredients: `Refined flour, fresh cream, cream detailing, sugar, vegetable oil, baking essentials. ${EGGLESS_NOTE} Final design & price depend on complexity.`,
-    images: ["/images/menu/menu-car-cake.jpg", GALLERY[4], GALLERY[1]],
+    images: ["/images/menu/menu-car-cake.jpg"],
     price: 350,
     weightOptions: weightOptionsFrom(350, 650),
     flavours: CAKE_FLAVOURS,
@@ -253,7 +244,7 @@ export const products: Product[] = [
     description:
       "Everyone's favourite robot cat, hand-piped in cream on a soft sponge base — a guaranteed smile at any kids' party.",
     ingredients: `Refined flour, fresh cream, cream detailing, sugar, vegetable oil, baking essentials. ${EGGLESS_NOTE} Final design & price depend on complexity.`,
-    images: ["/images/menu/menu-doraemon-cake.jpg", GALLERY[5], GALLERY[3]],
+    images: ["/images/menu/menu-doraemon-cake.jpg"],
     price: 350,
     weightOptions: weightOptionsFrom(350, 650),
     flavours: CAKE_FLAVOURS,
@@ -268,7 +259,7 @@ export const products: Product[] = [
     description:
       "A cute mini personal-size cake in a box, perfect for a small celebration, a sweet gift, or just because.",
     ingredients: `Refined flour, fresh cream, sugar, vegetable oil, baking essentials. ${EGGLESS_NOTE}`,
-    images: [GALLERY[0], GALLERY[4]],
+    images: [],
     price: 150,
     flavours: CAKE_FLAVOURS,
     note: "Final price depends on design",

@@ -247,6 +247,7 @@ export interface Database {
           order_id: string | null;
           rating: number;
           comment: string | null;
+          guest_name: string | null;
           is_verified: boolean;
           created_at: string;
         },
@@ -257,6 +258,7 @@ export interface Database {
           order_id?: string | null;
           rating: number;
           comment?: string | null;
+          guest_name?: string | null;
           is_verified?: boolean;
         }
       >;

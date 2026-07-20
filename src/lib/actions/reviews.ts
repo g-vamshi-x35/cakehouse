@@ -18,6 +18,7 @@ export async function submitReviewAction(
   const productSlug = String(formData.get("productSlug") || "");
   const rating = Number(formData.get("rating") || 0);
   const comment = String(formData.get("comment") || "").trim();
+  const guestName = String(formData.get("guestName") || "").trim();
 
   if (!productId || rating < 1 || rating > 5) {
     return { error: "Please choose a rating between 1 and 5 stars." };
@@ -28,23 +29,28 @@ export async function submitReviewAction(
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) {
-    return { error: "Please log in to leave a review." };
+  if (!user && !guestName) {
+    return { error: "Please enter your name." };
   }
 
-  const { count } = await supabase
-    .from("order_items")
-    .select("id, orders!inner(customer_id, order_status)", { count: "exact", head: true })
-    .eq("product_id", productId)
-    .eq("orders.customer_id", user.id)
-    .eq("orders.order_status", "delivered");
+  let isVerified = false;
+  if (user) {
+    const { count } = await supabase
+      .from("order_items")
+      .select("id, orders!inner(customer_id, order_status)", { count: "exact", head: true })
+      .eq("product_id", productId)
+      .eq("orders.customer_id", user.id)
+      .eq("orders.order_status", "delivered");
+    isVerified = Boolean(count && count > 0);
+  }
 
   const { error } = await supabase.from("reviews").insert({
     product_id: productId,
-    customer_id: user.id,
+    customer_id: user?.id ?? null,
+    guest_name: user ? null : guestName,
     rating,
     comment: comment || null,
-    is_verified: Boolean(count && count > 0),
+    is_verified: isVerified,
   });
 
   if (error) return { error: error.message };

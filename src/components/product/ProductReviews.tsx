@@ -1,4 +1,3 @@
-import Link from "next/link";
 import SectionReveal from "@/components/ui/SectionReveal";
 import StarRating from "@/components/ui/StarRating";
 import ReviewForm from "@/components/product/ReviewForm";
@@ -43,16 +42,7 @@ export default async function ProductReviews({
         </SectionReveal>
 
         <SectionReveal delay={0.05} className="mb-8">
-          {isLoggedIn ? (
-            <ReviewForm productId={productId} productSlug={productSlug} />
-          ) : (
-            <p className="text-sm text-ink/60 bg-cream rounded-2xl p-5">
-              <Link href={`/login?next=/menu/${productSlug}`} className="text-rose font-semibold hover:text-brown">
-                Log in
-              </Link>{" "}
-              to leave a review.
-            </p>
-          )}
+          <ReviewForm productId={productId} productSlug={productSlug} isLoggedIn={isLoggedIn} />
         </SectionReveal>
 
         <div className="space-y-4">

@@ -16,6 +16,7 @@ type DbReviewRow = {
   comment: string | null;
   is_verified: boolean;
   created_at: string;
+  guest_name: string | null;
   profiles: { full_name: string | null } | { full_name: string | null }[] | null;
 };
 
@@ -25,7 +26,7 @@ export async function getReviewsForProduct(productId: string): Promise<ReviewWit
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("reviews")
-    .select("id, rating, comment, is_verified, created_at, profiles ( full_name )")
+    .select("id, rating, comment, is_verified, created_at, guest_name, profiles ( full_name )")
     .eq("product_id", productId)
     .order("created_at", { ascending: false });
 
@@ -39,7 +40,7 @@ export async function getReviewsForProduct(productId: string): Promise<ReviewWit
       comment: r.comment,
       is_verified: r.is_verified,
       created_at: r.created_at,
-      author_name: profile?.full_name || "Cake House Customer",
+      author_name: profile?.full_name || r.guest_name || "Cake House Customer",
     };
   });
 }

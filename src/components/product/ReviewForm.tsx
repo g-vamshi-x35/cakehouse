@@ -4,7 +4,18 @@ import { useActionState, useState } from "react";
 import { FaStar, FaRegStar } from "react-icons/fa";
 import { submitReviewAction, type ReviewActionState } from "@/lib/actions/reviews";
 
-export default function ReviewForm({ productId, productSlug }: { productId: string; productSlug: string }) {
+const inputClasses =
+  "w-full rounded-xl border border-brown/20 bg-cream-light px-4 py-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-rose/60";
+
+export default function ReviewForm({
+  productId,
+  productSlug,
+  isLoggedIn,
+}: {
+  productId: string;
+  productSlug: string;
+  isLoggedIn: boolean;
+}) {
   const [state, formAction, pending] = useActionState<ReviewActionState, FormData>(
     submitReviewAction,
     null
@@ -46,11 +57,15 @@ export default function ReviewForm({ productId, productSlug }: { productId: stri
         })}
       </div>
 
+      {!isLoggedIn && (
+        <input name="guestName" placeholder="Your Name" required className={inputClasses.replace("resize-none", "")} />
+      )}
+
       <textarea
         name="comment"
         rows={3}
         placeholder="Tell us what you thought (optional)"
-        className="w-full rounded-xl border border-brown/20 bg-cream-light px-4 py-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-rose/60"
+        className={inputClasses}
       />
 
       {state?.error && (
