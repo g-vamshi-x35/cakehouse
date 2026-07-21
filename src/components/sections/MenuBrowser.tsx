@@ -27,9 +27,15 @@ function startingPrice(product: Product): number {
   return priced[0]?.price ?? product.price;
 }
 
-export default function MenuBrowser({ products }: { products: Product[] }) {
+export default function MenuBrowser({
+  products,
+  initialTag = null,
+}: {
+  products: Product[];
+  initialTag?: string | null;
+}) {
   const [active, setActive] = useState<MenuCategoryId>("all");
-  const [tag, setTag] = useState<string | null>(null);
+  const [tag, setTag] = useState<string | null>(initialTag);
   const [query, setQuery] = useState("");
   const [weight, setWeight] = useState<string>("any");
   const [availableToday, setAvailableToday] = useState(false);

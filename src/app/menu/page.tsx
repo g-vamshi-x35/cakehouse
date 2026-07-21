@@ -9,8 +9,11 @@ export const metadata: Metadata = {
     "Browse Cake House's full menu — regular & customized cakes, pizza, samosa and patties. 100% vegetarian, 100% egg-free.",
 };
 
-export default async function MenuPage() {
+type Props = { searchParams: Promise<{ tag?: string }> };
+
+export default async function MenuPage({ searchParams }: Props) {
   const products = await getAllProducts();
+  const { tag } = await searchParams;
 
   return (
     <>
@@ -19,7 +22,7 @@ export default async function MenuPage() {
         title="Crafted Fresh, Every Single Day"
         subtitle="From classic flavours to fully customized theme cakes and quick snacks — everything is made fresh in-house."
       />
-      <MenuBrowser products={products} />
+      <MenuBrowser products={products} initialTag={tag ?? null} />
     </>
   );
 }
