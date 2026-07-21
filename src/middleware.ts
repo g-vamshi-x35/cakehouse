@@ -22,6 +22,15 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
+  // Next.js Link prefetches (hover/viewport) run through middleware just
+  // like real navigations. Every one of those was calling Supabase's auth
+  // API, which is what actually exhausted the project's auth rate limit —
+  // skip the check for speculative prefetches; the real navigation still
+  // gets the full auth check below.
+  if (request.headers.get("next-router-prefetch") === "1") {
+    return response;
+  }
+
   const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
       getAll() {

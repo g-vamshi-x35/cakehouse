@@ -42,7 +42,17 @@ export default function LoadingScreen() {
         .to(rootRef.current, { opacity: 0, duration: 0.5, ease: "power2.out" }, "+=0.2");
     }, rootRef);
 
-    return () => ctx.revert();
+    // Safety net: this overlay sits at z-[200] above the entire site, so if
+    // the GSAP timeline's onComplete never fires for any reason — a
+    // throttled requestAnimationFrame in a backgrounded tab, a slow device,
+    // anything interrupting the ticker — it must not stay up and silently
+    // block every click on the page forever.
+    const failSafe = setTimeout(() => setVisible(false), 3000);
+
+    return () => {
+      ctx.revert();
+      clearTimeout(failSafe);
+    };
   }, []);
   /* eslint-enable react-hooks/set-state-in-effect */
 

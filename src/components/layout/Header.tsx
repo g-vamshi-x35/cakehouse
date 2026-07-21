@@ -102,6 +102,7 @@ export default function Header() {
           <div className="flex items-center gap-2">
             <Link
               href="/account"
+              prefetch={false}
               className="hidden sm:inline-flex p-2 text-brown hover:text-rose transition-colors"
               aria-label="My account"
             >
@@ -175,12 +176,12 @@ export default function Header() {
             ))}
 
             <DrawerDivider />
-            <DrawerLink href="/account" label="My Account" icon={FiUser} onClick={() => setMobileOpen(false)} />
-            <DrawerLink href="/account/orders" label="My Orders" icon={FiPackage} onClick={() => setMobileOpen(false)} />
-            <DrawerLink href="/account/wishlist" label="Wishlist" icon={FiHeart} onClick={() => setMobileOpen(false)} />
+            <DrawerLink href="/account" label="My Account" icon={FiUser} onClick={() => setMobileOpen(false)} prefetch={false} />
+            <DrawerLink href="/account/orders" label="My Orders" icon={FiPackage} onClick={() => setMobileOpen(false)} prefetch={false} />
+            <DrawerLink href="/account/wishlist" label="Wishlist" icon={FiHeart} onClick={() => setMobileOpen(false)} prefetch={false} />
 
             <DrawerDivider />
-            <DrawerLink href="/staff/login" label="Staff / Admin Login" icon={FiShield} onClick={() => setMobileOpen(false)} />
+            <DrawerLink href="/staff/login" label="Staff / Admin Login" icon={FiShield} onClick={() => setMobileOpen(false)} prefetch={false} />
 
             <DrawerDivider />
             <DrawerAction href={`tel:+91${business.phones[0]}`} label="Call Bakery" icon={FiPhone} />
@@ -223,17 +224,20 @@ function DrawerLink({
   icon: Icon,
   active = false,
   onClick,
+  prefetch = true,
 }: {
   href: string;
   label: string;
   icon?: ComponentType<{ size?: number }>;
   active?: boolean;
   onClick: () => void;
+  prefetch?: boolean;
 }) {
   return (
     <Link
       href={href}
       onClick={onClick}
+      prefetch={prefetch}
       className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-[15px] font-semibold transition-colors ${
         active ? "text-rose bg-rose/10" : "text-brown hover:bg-brown/5"
       }`}
