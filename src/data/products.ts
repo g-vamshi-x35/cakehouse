@@ -440,10 +440,13 @@ export function searchProducts(items: Product[], query: string): Product[] {
   });
 }
 
+// Shows a single starting price (e.g. "From ₹290") rather than a
+// "₹290 / ₹590" pair — that pair was two different weights (0.5kg vs 1kg),
+// not a before/after price, and read too easily as a fake discount.
 export function displayProductPrice(product: Product): string {
   if (product.weightOptions && product.weightOptions.length > 0) {
     const priced = product.weightOptions.filter((w) => w.price != null);
-    if (priced.length >= 2) return `₹${priced[0].price} / ₹${priced[1].price}`;
+    if (priced.length >= 2) return `From ₹${priced[0].price}`;
     if (priced.length === 1) return `₹${priced[0].price}`;
   }
   return `₹${product.price}`;
