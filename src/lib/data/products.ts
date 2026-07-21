@@ -24,6 +24,7 @@ function enrichFromStatic(product: Product): Product {
     ...product,
     weightOptions: weightOptions ?? product.weightOptions,
     available: staticMatch.available,
+    tags: staticMatch.tags,
     designType: staticMatch.designType,
     theme: staticMatch.theme,
     minWeight: staticMatch.minWeight,

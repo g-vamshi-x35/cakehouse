@@ -18,6 +18,63 @@ export const menuCategories = [
 
 export type MenuCategoryId = (typeof menuCategories)[number]["id"];
 
+// Full requested browse taxonomy, kept as a lookup table of id -> label.
+// Only tags actually present on at least one real product are ever shown
+// in the UI (see getActiveBrowseTags) — the rest are here so new real
+// products can be tagged into them later with zero UI work.
+export const BROWSE_TAGS: Record<string, string> = {
+  "premium-cakes": "Premium Cakes",
+  "chocolate-cakes": "Chocolate Cakes",
+  "fruit-cakes": "Fruit Cakes",
+  "kids-cakes": "Kids Cakes",
+  "wedding-cakes": "Wedding Cakes",
+  "anniversary-cakes": "Anniversary Cakes",
+  "birthday-cakes": "Birthday Cakes",
+  "photo-cakes": "Photo Cakes",
+  "theme-cakes": "Theme Cakes",
+  "cartoon-cakes": "Cartoon Cakes",
+  "designer-cakes": "Designer Cakes",
+  "tier-cakes": "Tier Cakes",
+  "heart-cakes": "Heart Cakes",
+  "eggless-cakes": "Eggless Cakes",
+  "cup-cakes": "Cup Cakes",
+  "jar-cakes": "Jar Cakes",
+  pastries: "Pastries",
+  "cheese-cakes": "Cheese Cakes",
+  brownies: "Brownies",
+  "bento-cakes": "Bento Cakes",
+  "mini-cakes": "Mini Cakes",
+  "festival-cakes": "Festival Cakes",
+  "seasonal-cakes": "Seasonal Cakes",
+  "dry-cakes": "Dry Cakes",
+  cookies: "Cookies",
+  donuts: "Donuts",
+  muffins: "Muffins",
+  croissants: "Croissants",
+  puffs: "Puffs",
+  "veg-patties": "Veg Patties",
+  "paneer-patties": "Paneer Patties",
+  "mushroom-patties": "Mushroom Patties",
+  "aloo-patties": "Aloo Patties",
+  "veg-burger": "Veg Burger",
+  "cheese-burger": "Cheese Burger",
+  "french-fries": "French Fries",
+  "garlic-bread": "Garlic Bread",
+  sandwich: "Sandwich",
+  rolls: "Rolls",
+  "cold-coffee": "Cold Coffee",
+  "hot-coffee": "Hot Coffee",
+  tea: "Tea",
+  milkshake: "Milkshake",
+  mojito: "Mojito",
+  "cool-drinks": "Cool Drinks",
+  "ice-cream": "Ice Cream",
+  candles: "Candles",
+  "birthday-accessories": "Birthday Accessories",
+  "party-decorations": "Party Decorations",
+  "gift-hampers": "Gift Hampers",
+};
+
 export type Product = {
   id: string;
   slug: string;
@@ -35,6 +92,7 @@ export type Product = {
   avgRating?: number;
   reviewCount?: number;
   available?: boolean; // defaults to true when omitted
+  tags?: string[]; // secondary browse categories — keys of BROWSE_TAGS
   // Custom-cake-only descriptive fields (customized-cakes category)
   designType?: string;
   theme?: string;
@@ -94,6 +152,7 @@ export const products: Product[] = [
     price: 290,
     weightOptions: weightOptionsFrom(290, 550),
     flavours: ["Vanilla"],
+    tags: ["birthday-cakes", "eggless-cakes"],
   },
   {
     id: "pineapple",
@@ -108,6 +167,7 @@ export const products: Product[] = [
     price: 290,
     weightOptions: weightOptionsFrom(290, 590),
     flavours: ["Pineapple"],
+    tags: ["fruit-cakes", "eggless-cakes"],
   },
   {
     id: "butterscotch",
@@ -122,6 +182,7 @@ export const products: Product[] = [
     price: 290,
     weightOptions: weightOptionsFrom(290, 590),
     flavours: ["Butterscotch"],
+    tags: ["birthday-cakes", "eggless-cakes"],
   },
   {
     id: "black-forest",
@@ -137,6 +198,7 @@ export const products: Product[] = [
     weightOptions: weightOptionsFrom(290, 590),
     flavours: ["Black Forest"],
     featured: true,
+    tags: ["chocolate-cakes", "premium-cakes", "birthday-cakes", "anniversary-cakes", "eggless-cakes"],
   },
   {
     id: "chocolate",
@@ -152,6 +214,7 @@ export const products: Product[] = [
     weightOptions: weightOptionsFrom(290, 590),
     flavours: ["Chocolate"],
     featured: true,
+    tags: ["chocolate-cakes", "birthday-cakes", "eggless-cakes"],
   },
   {
     id: "dark-truffle",
@@ -167,6 +230,7 @@ export const products: Product[] = [
     weightOptions: weightOptionsFrom(450, 900),
     flavours: ["Dark Chocolate"],
     featured: true,
+    tags: ["chocolate-cakes", "premium-cakes", "anniversary-cakes", "eggless-cakes"],
   },
   {
     id: "tutti-frutti",
@@ -181,6 +245,7 @@ export const products: Product[] = [
     price: 290,
     weightOptions: weightOptionsFrom(290, 590),
     flavours: ["Tutti Frutti"],
+    tags: ["fruit-cakes", "eggless-cakes"],
   },
   {
     id: "red-velvet",
@@ -196,6 +261,7 @@ export const products: Product[] = [
     weightOptions: weightOptionsFrom(350, 700),
     flavours: ["Red Velvet"],
     featured: true,
+    tags: ["premium-cakes", "birthday-cakes", "anniversary-cakes", "eggless-cakes"],
   },
   {
     id: "kit-kat",
@@ -210,6 +276,7 @@ export const products: Product[] = [
     price: 550,
     weightOptions: weightOptionsFrom(550, 1000),
     flavours: ["Chocolate"],
+    tags: ["chocolate-cakes", "premium-cakes", "kids-cakes", "birthday-cakes", "eggless-cakes"],
   },
   {
     id: "rasmalai",
@@ -224,6 +291,7 @@ export const products: Product[] = [
     price: 290,
     weightOptions: weightOptionsFrom(290, 590),
     flavours: ["Rasmalai"],
+    tags: ["premium-cakes", "festival-cakes", "eggless-cakes"],
   },
   {
     id: "doll",
@@ -245,6 +313,7 @@ export const products: Product[] = [
     minWeight: "1 kg",
     recommendedWeight: "2 kg (for the full skirt effect)",
     creamType: "Fresh whipped cream",
+    tags: ["kids-cakes", "theme-cakes", "designer-cakes", "birthday-cakes", "eggless-cakes"],
   },
   {
     id: "car",
@@ -266,6 +335,7 @@ export const products: Product[] = [
     minWeight: "1 kg",
     recommendedWeight: "1.5–2 kg (for a well-proportioned shape)",
     creamType: "Fresh whipped cream",
+    tags: ["kids-cakes", "theme-cakes", "designer-cakes", "birthday-cakes", "eggless-cakes"],
   },
   {
     id: "doraemon",
@@ -286,6 +356,7 @@ export const products: Product[] = [
     minWeight: "1 kg",
     recommendedWeight: "1.5 kg",
     creamType: "Fresh whipped cream",
+    tags: ["kids-cakes", "cartoon-cakes", "theme-cakes", "designer-cakes", "birthday-cakes", "eggless-cakes"],
   },
   {
     id: "bento",
@@ -305,6 +376,7 @@ export const products: Product[] = [
     minWeight: "0.15 kg",
     recommendedWeight: "0.15–0.25 kg per box",
     creamType: "Fresh whipped cream",
+    tags: ["mini-cakes", "bento-cakes", "eggless-cakes"],
   },
   { id: "pizza-onion", slug: "onion-pizza", name: '8" Onion Pizza', type: "snack", category: "pizza", description: "Classic thin-crust pizza loaded with onions and mozzarella.", images: [], price: 100 },
   { id: "pizza-sweetcorn", slug: "sweetcorn-pizza", name: '8" Sweetcorn Pizza', type: "snack", category: "pizza", description: "Cheesy pizza topped with sweet corn kernels.", images: [], price: 120 },
@@ -312,9 +384,9 @@ export const products: Product[] = [
   { id: "pizza-mushroom", slug: "mushroom-pizza", name: '8" Mushroom Pizza', type: "snack", category: "pizza", description: "Fresh mushrooms over a cheesy tomato base.", images: [], price: 130 },
   { id: "pizza-large", slug: "large-pizza", name: '12" Large Pizza', type: "snack", category: "pizza", description: "Our large 12-inch pizza — great for sharing.", images: [], price: 250 },
   { id: "samosa", slug: "samosa", name: "Samosa", type: "snack", category: "snacks", description: "Crispy, golden and spiced — a teatime favourite.", images: [], price: 7 },
-  { id: "patties-paneer", slug: "paneer-patties", name: "Paneer Patties", type: "snack", category: "snacks", description: "Flaky pastry filled with a spiced paneer stuffing.", images: [], price: 25 },
-  { id: "patties-mushroom", slug: "mushroom-patties", name: "Mushroom Patties", type: "snack", category: "snacks", description: "Flaky pastry filled with a savoury mushroom stuffing.", images: [], price: 25 },
-  { id: "patties-aloo", slug: "aloo-patties", name: "Aloo Patties", type: "snack", category: "snacks", description: "Flaky pastry filled with spiced mashed potato.", images: [], price: 20 },
+  { id: "patties-paneer", slug: "paneer-patties", name: "Paneer Patties", type: "snack", category: "snacks", description: "Flaky pastry filled with a spiced paneer stuffing.", images: [], price: 25, tags: ["paneer-patties"] },
+  { id: "patties-mushroom", slug: "mushroom-patties", name: "Mushroom Patties", type: "snack", category: "snacks", description: "Flaky pastry filled with a savoury mushroom stuffing.", images: [], price: 25, tags: ["mushroom-patties"] },
+  { id: "patties-aloo", slug: "aloo-patties", name: "Aloo Patties", type: "snack", category: "snacks", description: "Flaky pastry filled with spiced mashed potato.", images: [], price: 20, tags: ["veg-patties", "aloo-patties"] },
 ];
 
 export function getProductBySlug(slug: string): Product | undefined {
@@ -329,6 +401,43 @@ export function getSimilarProducts(product: Product, limit = 4): Product[] {
   return products
     .filter((p) => p.id !== product.id && p.category === product.category)
     .slice(0, limit);
+}
+
+// Only tags that actually match ≥1 product currently in the catalog —
+// keeps the browse-by-type filter honest instead of listing dozens of
+// categories that lead to "no products found."
+export function getActiveBrowseTags(items: Product[]): { id: string; label: string }[] {
+  const seen = new Set<string>();
+  for (const p of items) {
+    for (const t of p.tags ?? []) seen.add(t);
+  }
+  return Object.entries(BROWSE_TAGS)
+    .filter(([id]) => seen.has(id))
+    .map(([id, label]) => ({ id, label }));
+}
+
+function normalize(s: string): string {
+  return s.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+// Matches on name, category label, flavours, description, and tags. Also
+// checks a punctuation/space-stripped form of both query and haystack so
+// "kitkat" finds "Kit Kat Cake" and "8 onion pizza" finds '8" Onion Pizza'.
+export function searchProducts(items: Product[], query: string): Product[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return items;
+  const qCompact = normalize(query);
+
+  return items.filter((p) => {
+    const categoryLabel = menuCategories.find((c) => c.id === p.category)?.label ?? "";
+    const tagLabels = (p.tags ?? []).map((t) => BROWSE_TAGS[t] ?? t);
+    const haystack = [p.name, categoryLabel, p.description, ...(p.flavours ?? []), ...tagLabels]
+      .join(" ")
+      .toLowerCase();
+
+    if (haystack.includes(q)) return true;
+    return normalize(haystack).includes(qCompact);
+  });
 }
 
 export function displayProductPrice(product: Product): string {
