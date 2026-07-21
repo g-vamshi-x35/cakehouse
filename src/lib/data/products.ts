@@ -13,15 +13,39 @@ import {
 // are curated presentation content, not yet columns in the products table —
 // enrich DB-sourced rows with them by slug so they show up on the live
 // (Supabase-backed) site too, not just the static fallback.
+//
+// Images specifically: a DB row that already existed before a photo was
+// added only has the photo in product_images once the corresponding SQL
+// migration is run there. Until then, this row's `images` from the DB is
+// `[]`, which would show the "Image Coming Soon" placeholder even though a
+// real local file exists in the static catalog. Falling back to the static
+// image whenever the DB has none means the real photo shows immediately,
+// without waiting on that migration.
 function enrichFromStatic(product: Product): Product {
   const staticMatch = staticGetBySlug(product.slug);
-  if (!staticMatch) return product;
+  if (!staticMatch) {
+    console.log(`[images] "${product.slug}": no static entry to fall back to (using DB images as-is: ${JSON.stringify(product.images)})`);
+    return product;
+  }
+
   const weightOptions: WeightOption[] | undefined = product.weightOptions?.map((w) => {
     const staticOption = staticMatch.weightOptions?.find((sw) => sw.label === w.label);
     return staticOption?.compareAtPrice ? { ...w, compareAtPrice: staticOption.compareAtPrice } : w;
   });
+
+  let images = product.images;
+  if (images.length === 0 && staticMatch.images.length > 0) {
+    console.log(`[images] "${product.slug}": DB had no images, falling back to static -> ${JSON.stringify(staticMatch.images)}`);
+    images = staticMatch.images;
+  } else if (images.length > 0) {
+    console.log(`[images] "${product.slug}": using DB image(s) -> ${JSON.stringify(images)}`);
+  } else {
+    console.log(`[images] "${product.slug}": no DB images and no static image found (path attempted: /images/products/cakes/${product.slug}/1.jpg) -> showing placeholder`);
+  }
+
   return {
     ...product,
+    images,
     weightOptions: weightOptions ?? product.weightOptions,
     available: staticMatch.available,
     tags: staticMatch.tags,
