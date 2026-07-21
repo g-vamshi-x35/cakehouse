@@ -9,6 +9,24 @@ import {
   type WeightOption,
 } from "@/data/products";
 
+// Design type / theme / min-recommended weight / cream type / availability
+// are curated presentation content, not yet columns in the products table —
+// enrich DB-sourced rows with them by slug so they show up on the live
+// (Supabase-backed) site too, not just the static fallback.
+function enrichFromStatic(product: Product): Product {
+  const staticMatch = staticGetBySlug(product.slug);
+  if (!staticMatch) return product;
+  return {
+    ...product,
+    available: staticMatch.available,
+    designType: staticMatch.designType,
+    theme: staticMatch.theme,
+    minWeight: staticMatch.minWeight,
+    recommendedWeight: staticMatch.recommendedWeight,
+    creamType: staticMatch.creamType,
+  };
+}
+
 const CAKE_CATEGORIES = new Set(["regular-cakes", "customized-cakes"]);
 
 type DbProductRow = {
@@ -80,7 +98,7 @@ export async function getAllProducts(): Promise<Product[]> {
     .eq("is_active", true);
 
   if (error || !data) return staticProducts;
-  return (data as unknown as DbProductRow[]).map(mapRow);
+  return (data as unknown as DbProductRow[]).map(mapRow).map(enrichFromStatic);
 }
 
 export async function getProductBySlug(slug: string): Promise<Product | undefined> {
@@ -95,7 +113,7 @@ export async function getProductBySlug(slug: string): Promise<Product | undefine
     .maybeSingle();
 
   if (error || !data) return staticGetBySlug(slug);
-  return mapRow(data as unknown as DbProductRow);
+  return enrichFromStatic(mapRow(data as unknown as DbProductRow));
 }
 
 export async function getFeaturedProducts(): Promise<Product[]> {
@@ -109,21 +127,25 @@ export async function getFeaturedProducts(): Promise<Product[]> {
     .eq("is_featured", true);
 
   if (error || !data) return staticGetFeatured();
-  return (data as unknown as DbProductRow[]).map(mapRow);
+  return (data as unknown as DbProductRow[]).map(mapRow).map(enrichFromStatic);
 }
 
 export async function getSimilarProducts(product: Product, limit = 4): Promise<Product[]> {
   if (!isSupabaseConfigured()) return staticGetSimilar(product, limit);
 
   const supabase = await createClient();
+  // Filtering on an embedded (left-joined) relation's column is silently
+  // unreliable in PostgREST unless the embed is forced to an inner join —
+  // without `!inner` here, categories.slug was never actually applied,
+  // so "similar" products included every category (e.g. pizza next to cakes).
   const { data, error } = await supabase
     .from("products")
-    .select(SELECT)
+    .select(SELECT.replace("categories (", "categories!inner ("))
     .eq("is_active", true)
     .eq("categories.slug", product.category)
     .neq("id", product.id)
     .limit(limit);
 
   if (error || !data) return staticGetSimilar(product, limit);
-  return (data as unknown as DbProductRow[]).map(mapRow);
+  return (data as unknown as DbProductRow[]).map(mapRow).map(enrichFromStatic);
 }

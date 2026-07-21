@@ -47,7 +47,7 @@ export default async function ProductsPage() {
                     <FiEdit2 size={15} />
                   </Link>
                   <DeleteButton
-                    action={() => deleteProductAction(p.id)}
+                    action={deleteProductAction.bind(null, p.id)}
                     confirmMessage={`Delete "${p.name}"? This cannot be undone.`}
                   />
                 </div>

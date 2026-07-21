@@ -1,10 +1,7 @@
 import type { Metadata } from "next";
 import { Playfair_Display, Lato } from "next/font/google";
 import "./globals.css";
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
-import SmoothScrollProvider from "@/components/layout/SmoothScrollProvider";
-import LoadingScreen from "@/components/layout/LoadingScreen";
+import ChromeGate from "@/components/layout/ChromeGate";
 import ToastProvider from "@/components/layout/ToastProvider";
 import { CartProvider } from "@/components/cart/CartContext";
 
@@ -39,14 +36,9 @@ export default function RootLayout({
       className={`${playfair.variable} ${lato.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-cream-light text-ink">
-        <LoadingScreen />
         <ToastProvider />
         <CartProvider>
-          <SmoothScrollProvider>
-            <Header />
-            <main className="flex-1">{children}</main>
-            <Footer />
-          </SmoothScrollProvider>
+          <ChromeGate>{children}</ChromeGate>
         </CartProvider>
       </body>
     </html>

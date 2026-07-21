@@ -44,6 +44,13 @@ function ProductOrderPanelInner({ product }: { product: Product }) {
   const unitPrice = isCustomWeight ? null : selectedWeightOption?.price ?? product.price;
   const total = unitPrice != null ? unitPrice * qty : null;
 
+  const isUnavailable = product.available === false;
+  // Weight/flavour always have a valid default the moment options exist, so
+  // the one gate that actually needs enforcing is delivery date & time —
+  // a bakery can't plan production without knowing when it's needed.
+  const missingSchedule = product.type === "cake" && (!eventDate || !eventTime);
+  const canOrder = !isCustomWeight && !isUnavailable && !missingSchedule;
+
   const [leadTimeWarning, setLeadTimeWarning] = useState(false);
 
   function checkLeadTime(date: string, time: string) {
@@ -116,14 +123,23 @@ function ProductOrderPanelInner({ product }: { product: Product }) {
 
   return (
     <div className="bg-cream-light rounded-3xl p-6 md:p-8 space-y-6">
-      <div>
-        <p className="text-rose font-bold text-2xl">
-          {isCustomWeight ? "Price on request" : `₹${total}`}
-          {!isCustomWeight && qty > 1 && (
-            <span className="text-sm text-ink/50 font-normal ml-2">(₹{unitPrice} each)</span>
-          )}
-        </p>
-        {product.note && <p className="text-xs text-ink/50 mt-1">{product.note}</p>}
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-rose font-bold text-2xl">
+            {isCustomWeight ? "Price on request" : `₹${total}`}
+            {!isCustomWeight && qty > 1 && (
+              <span className="text-sm text-ink/50 font-normal ml-2">(₹{unitPrice} each)</span>
+            )}
+          </p>
+          {product.note && <p className="text-xs text-ink/50 mt-1">{product.note}</p>}
+        </div>
+        <span
+          className={`text-xs font-semibold px-2.5 py-1 rounded-full shrink-0 ${
+            isUnavailable ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"
+          }`}
+        >
+          {isUnavailable ? "Currently Unavailable" : "In Stock"}
+        </span>
       </div>
 
       {weightOptions && weightOptions.length > 0 && (
@@ -193,7 +209,7 @@ function ProductOrderPanelInner({ product }: { product: Product }) {
       {product.type === "cake" && (
         <div>
           <label className="text-sm font-semibold text-brown mb-2 block">
-            Message to write on the cake
+            Message to write on the cake <span className="font-normal text-ink/40">(optional)</span>
           </label>
           <input
             value={customMessage}
@@ -270,17 +286,23 @@ function ProductOrderPanelInner({ product }: { product: Product }) {
         className={inputClasses}
       />
 
+      {missingSchedule && (
+        <p className="text-xs text-brown/70 bg-cream rounded-lg px-4 py-2">
+          Please choose a delivery date and time above to add this to your cart.
+        </p>
+      )}
+
       <div className="flex flex-col sm:flex-row gap-3 pt-2">
         <button
           onClick={handleAddToCart}
-          disabled={isCustomWeight}
+          disabled={!canOrder}
           className="flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-cream border-2 border-brown text-brown font-semibold py-3.5 hover:bg-brown hover:text-cream-light transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <FiShoppingBag /> Add to Cart
         </button>
         <button
           onClick={handleBuyNow}
-          disabled={isCustomWeight}
+          disabled={!canOrder}
           className="flex-1 rounded-full bg-rose text-white font-semibold py-3.5 hover:bg-brown transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
           Buy Now
@@ -305,6 +327,11 @@ function ProductOrderPanelInner({ product }: { product: Product }) {
       {isCustomWeight && (
         <p className="text-xs text-center text-ink/50">
           Custom sizing needs a quick chat — message us on WhatsApp for a quote.
+        </p>
+      )}
+      {isUnavailable && (
+        <p className="text-xs text-center text-red-600">
+          This item is currently unavailable for online ordering — message us on WhatsApp to check.
         </p>
       )}
     </div>

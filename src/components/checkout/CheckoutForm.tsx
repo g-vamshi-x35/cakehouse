@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
+import toast from "react-hot-toast";
 import { FiClock, FiTag, FiCheck } from "react-icons/fi";
 import { useCart } from "@/components/cart/CartContext";
 import { placeOrderAction, validateCouponAction } from "@/lib/actions/orders";
 import { MIN_ADVANCE_AMOUNT } from "@/lib/orders/constants";
 import PaymentQrCard from "./PaymentQrCard";
+import OrderSuccessModal from "./OrderSuccessModal";
 import { business } from "@/data/business";
 
 const inputClasses =
@@ -34,12 +35,31 @@ function loadRazorpayScript(): Promise<boolean> {
   });
 }
 
+type SuccessInfo = {
+  orderId: string;
+  orderNumber: string;
+  customerName: string;
+  total: number;
+  deliveryDate?: string;
+  redirectQuery?: string;
+};
+
 export default function CheckoutForm() {
   const { hydrated, items } = useCart();
+  // Lifted above CheckoutFormReady: placing an order calls clear(), which
+  // drops items to zero and would otherwise unmount CheckoutFormReady (and
+  // the success modal inside it) via the items.length === 0 branch below,
+  // silently cancelling the redirect mid-flight.
+  const [successInfo, setSuccessInfo] = useState<SuccessInfo | null>(null);
 
   if (!hydrated) {
     return <div className="py-16 text-center text-ink/40">Loading your cart…</div>;
   }
+
+  if (successInfo) {
+    return <OrderSuccessModal {...successInfo} />;
+  }
+
   if (items.length === 0) {
     return (
       <div className="text-center py-16">
@@ -51,11 +71,10 @@ export default function CheckoutForm() {
     );
   }
 
-  return <CheckoutFormReady />;
+  return <CheckoutFormReady onSuccess={setSuccessInfo} />;
 }
 
-function CheckoutFormReady() {
-  const router = useRouter();
+function CheckoutFormReady({ onSuccess }: { onSuccess: (info: SuccessInfo) => void }) {
   const { items, subtotal, checkoutInfo, setCheckoutInfo, clear } = useCart();
 
   const firstEventDate = items.find((i) => i.eventDate)?.eventDate ?? "";
@@ -134,13 +153,20 @@ function CheckoutFormReady() {
 
     if (!result.ok) {
       setSubmitting(false);
-      setError(result.error);
+      toast.error(result.error);
       return;
     }
 
     if (payment === "qr_advance") {
       clear();
-      router.push(`/checkout/success/${result.orderId}?method=qr&amount=${result.advanceAmount}`);
+      onSuccess({
+        orderId: result.orderId,
+        orderNumber: result.orderNumber,
+        customerName: name,
+        total: result.total,
+        deliveryDate: eventDate || undefined,
+        redirectQuery: `?method=qr&amount=${result.advanceAmount}`,
+      });
       return;
     }
 
@@ -148,7 +174,7 @@ function CheckoutFormReady() {
     const scriptLoaded = await loadRazorpayScript();
     if (!scriptLoaded || !window.Razorpay) {
       setSubmitting(false);
-      setError("Couldn't load the payment gateway. Please try again or use the QR option.");
+      toast.error("Couldn't load the payment gateway. Please try again or use the QR option.");
       return;
     }
 
@@ -160,7 +186,7 @@ function CheckoutFormReady() {
     const createData = await createRes.json();
     if (!createRes.ok) {
       setSubmitting(false);
-      setError(createData.error || "Could not start payment.");
+      toast.error(createData.error || "Could not start payment.");
       return;
     }
 
@@ -190,11 +216,14 @@ function CheckoutFormReady() {
           }),
         });
         clear();
-        if (verifyRes.ok) {
-          router.push(`/checkout/success/${result.orderId}?method=razorpay`);
-        } else {
-          router.push(`/checkout/success/${result.orderId}?method=razorpay&unverified=1`);
-        }
+        onSuccess({
+          orderId: result.orderId,
+          orderNumber: result.orderNumber,
+          customerName: name,
+          total: result.total,
+          deliveryDate: eventDate || undefined,
+          redirectQuery: verifyRes.ok ? "?method=razorpay" : "?method=razorpay&unverified=1",
+        });
       },
       modal: {
         ondismiss: () => setSubmitting(false),
@@ -347,7 +376,16 @@ function CheckoutFormReady() {
           disabled={submitting}
           className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-rose text-white font-semibold py-3.5 hover:bg-brown transition-colors disabled:opacity-60"
         >
-          {submitting ? "Processing..." : payment === "qr_advance" ? "Place Order" : `Pay ₹${amountDueNow}`}
+          {submitting ? (
+            <>
+              <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+              Processing…
+            </>
+          ) : payment === "qr_advance" ? (
+            "Place Order"
+          ) : (
+            `Pay ₹${amountDueNow}`
+          )}
         </button>
       </div>
     </div>

@@ -105,6 +105,9 @@ export default function Footer() {
       <div className="container-px py-5 border-t border-cream-light/15 text-xs text-cream-light/60 flex flex-col sm:flex-row items-center justify-between gap-2">
         <p>© {new Date().getFullYear()} Cake House. All rights reserved.</p>
         <p>{business.tagline}</p>
+        <Link href="/staff/login" className="hover:text-cream-light transition-colors">
+          Staff Login
+        </Link>
       </div>
     </footer>
   );

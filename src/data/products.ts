@@ -33,7 +33,28 @@ export type Product = {
   featured?: boolean;
   avgRating?: number;
   reviewCount?: number;
+  available?: boolean; // defaults to true when omitted
+  // Custom-cake-only descriptive fields (customized-cakes category)
+  designType?: string;
+  theme?: string;
+  minWeight?: string;
+  recommendedWeight?: string;
+  creamType?: string;
 };
+
+// Shared across every cake — the site is 100% eggless & vegetarian, always.
+export const SHELF_LIFE = "Best enjoyed within 24 hours; keeps well refrigerated for up to 3 days.";
+export const STORAGE_INSTRUCTIONS =
+  "Refrigerate immediately on arrival. Bring to room temperature for 20–30 minutes before serving for the best taste and texture.";
+
+export function servingSizeFor(weightLabel: string): string {
+  const table: Record<string, string> = {
+    "0.5 kg": "Serves 4–6",
+    "1 kg": "Serves 8–10",
+    "2 kg": "Serves 18–20",
+  };
+  return table[weightLabel] ?? "Varies by size";
+}
 
 const CAKE_FLAVOURS = [
   "Vanilla",
@@ -218,6 +239,11 @@ export const products: Product[] = [
     flavours: CAKE_FLAVOURS,
     note: "Final price depends on design",
     featured: true,
+    designType: "Semi-fondant with hand-piped cream detailing",
+    theme: "Princess / Doll",
+    minWeight: "1 kg",
+    recommendedWeight: "2 kg (for the full skirt effect)",
+    creamType: "Fresh whipped cream",
   },
   {
     id: "car",
@@ -234,6 +260,11 @@ export const products: Product[] = [
     flavours: CAKE_FLAVOURS,
     note: "Final price depends on design",
     featured: true,
+    designType: "3D hand-sculpted with cream piping",
+    theme: "Vehicle / Car",
+    minWeight: "1 kg",
+    recommendedWeight: "1.5–2 kg (for a well-proportioned shape)",
+    creamType: "Fresh whipped cream",
   },
   {
     id: "doraemon",
@@ -249,6 +280,11 @@ export const products: Product[] = [
     weightOptions: weightOptionsFrom(350, 650),
     flavours: CAKE_FLAVOURS,
     note: "Final price depends on design",
+    designType: "Cream-piped character design",
+    theme: "Cartoon / Kids",
+    minWeight: "1 kg",
+    recommendedWeight: "1.5 kg",
+    creamType: "Fresh whipped cream",
   },
   {
     id: "bento",
@@ -263,6 +299,11 @@ export const products: Product[] = [
     price: 150,
     flavours: CAKE_FLAVOURS,
     note: "Final price depends on design",
+    designType: "Mini personal-size cake, presented in a box",
+    theme: "Custom (any small design)",
+    minWeight: "0.15 kg",
+    recommendedWeight: "0.15–0.25 kg per box",
+    creamType: "Fresh whipped cream",
   },
   { id: "pizza-onion", slug: "onion-pizza", name: '8" Onion Pizza', type: "snack", category: "pizza", description: "Classic thin-crust pizza loaded with onions and mozzarella.", images: [], price: 100 },
   { id: "pizza-sweetcorn", slug: "sweetcorn-pizza", name: '8" Sweetcorn Pizza', type: "snack", category: "pizza", description: "Cheesy pizza topped with sweet corn kernels.", images: [], price: 120 },

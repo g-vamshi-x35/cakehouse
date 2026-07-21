@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import ImagePlaceholder from "@/components/ui/ImagePlaceholder";
 
 export default function ProductGallery({
   images,
@@ -16,8 +17,8 @@ export default function ProductGallery({
 
   if (images.length === 0) {
     return (
-      <div className="rounded-3xl aspect-square bg-gradient-to-br from-cream to-rose/25 flex items-center justify-center">
-        <span className="text-8xl">{placeholderEmoji}</span>
+      <div className="rounded-3xl aspect-square overflow-hidden">
+        <ImagePlaceholder emoji={placeholderEmoji} />
       </div>
     );
   }

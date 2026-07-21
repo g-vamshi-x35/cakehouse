@@ -9,6 +9,7 @@ import { displayProductPrice } from "@/data/products";
 import { orderOnWhatsAppLink } from "@/lib/whatsapp";
 import { useCart } from "@/components/cart/CartContext";
 import StarRating from "@/components/ui/StarRating";
+import ImagePlaceholder from "@/components/ui/ImagePlaceholder";
 
 export default function ProductCard({ product }: { product: Product }) {
   const { addItem } = useCart();
@@ -32,9 +33,12 @@ export default function ProductCard({ product }: { product: Product }) {
             className="object-cover transition-transform duration-500 group-hover:scale-110"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-cream to-rose/25">
-            <span className="text-5xl">{placeholderEmoji}</span>
-          </div>
+          <ImagePlaceholder emoji={placeholderEmoji} />
+        )}
+        {product.available === false && (
+          <span className="absolute top-3 right-3 bg-ink/80 text-cream-light text-[11px] font-semibold px-2.5 py-1 rounded-full">
+            Unavailable
+          </span>
         )}
         {product.note && (
           <span className="absolute top-3 left-3 bg-brown-dark/90 text-cream-light text-[11px] font-semibold px-2.5 py-1 rounded-full">
