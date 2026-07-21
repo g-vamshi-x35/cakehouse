@@ -16,8 +16,13 @@ import {
 function enrichFromStatic(product: Product): Product {
   const staticMatch = staticGetBySlug(product.slug);
   if (!staticMatch) return product;
+  const weightOptions: WeightOption[] | undefined = product.weightOptions?.map((w) => {
+    const staticOption = staticMatch.weightOptions?.find((sw) => sw.label === w.label);
+    return staticOption?.compareAtPrice ? { ...w, compareAtPrice: staticOption.compareAtPrice } : w;
+  });
   return {
     ...product,
+    weightOptions: weightOptions ?? product.weightOptions,
     available: staticMatch.available,
     designType: staticMatch.designType,
     theme: staticMatch.theme,

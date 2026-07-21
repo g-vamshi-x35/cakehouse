@@ -40,6 +40,12 @@ export default function LoginForm({ next }: { next?: string }) {
           Create an account
         </Link>
       </p>
+      <p className="text-center text-xs text-ink/40">
+        Bakery owner or employee?{" "}
+        <Link href="/staff/login" prefetch={false} className="font-semibold text-brown hover:text-rose">
+          Staff login here
+        </Link>
+      </p>
     </form>
   );
 }

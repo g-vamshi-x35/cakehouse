@@ -43,6 +43,10 @@ function ProductOrderPanelInner({ product }: { product: Product }) {
   const isCustomWeight = weight === "Custom" || (selectedWeightOption && selectedWeightOption.price == null);
   const unitPrice = isCustomWeight ? null : selectedWeightOption?.price ?? product.price;
   const total = unitPrice != null ? unitPrice * qty : null;
+  const compareAtTotal =
+    !isCustomWeight && selectedWeightOption?.compareAtPrice
+      ? selectedWeightOption.compareAtPrice * qty
+      : undefined;
 
   const isUnavailable = product.available === false;
   // Weight/flavour always have a valid default the moment options exist, so
@@ -125,10 +129,13 @@ function ProductOrderPanelInner({ product }: { product: Product }) {
     <div className="bg-cream-light rounded-3xl p-6 md:p-8 space-y-6">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-rose font-bold text-2xl">
+          <p className="text-rose font-bold text-2xl flex items-center flex-wrap gap-2">
             {isCustomWeight ? "Price on request" : `₹${total}`}
+            {compareAtTotal != null && (
+              <span className="text-ink/40 text-base font-normal line-through">₹{compareAtTotal}</span>
+            )}
             {!isCustomWeight && qty > 1 && (
-              <span className="text-sm text-ink/50 font-normal ml-2">(₹{unitPrice} each)</span>
+              <span className="text-sm text-ink/50 font-normal">(₹{unitPrice} each)</span>
             )}
           </p>
           {product.note && <p className="text-xs text-ink/50 mt-1">{product.note}</p>}
@@ -157,7 +164,14 @@ function ProductOrderPanelInner({ product }: { product: Product }) {
                 }`}
               >
                 {w.label}
-                {w.price != null && <span className="ml-1 font-normal opacity-80">₹{w.price}</span>}
+                {w.price != null && (
+                  <span className="ml-1 font-normal opacity-80">
+                    ₹{w.price}
+                    {w.compareAtPrice && (
+                      <span className="ml-1 line-through opacity-60">₹{w.compareAtPrice}</span>
+                    )}
+                  </span>
+                )}
               </button>
             ))}
           </div>

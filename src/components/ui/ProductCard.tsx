@@ -5,7 +5,7 @@ import Link from "next/link";
 import { FiShoppingBag } from "react-icons/fi";
 import { FaWhatsapp } from "react-icons/fa";
 import type { Product } from "@/data/products";
-import { displayProductPrice } from "@/data/products";
+import { displayProductPrice, getPriceDisplay } from "@/data/products";
 import { orderOnWhatsAppLink } from "@/lib/whatsapp";
 import { useCart } from "@/components/cart/CartContext";
 import StarRating from "@/components/ui/StarRating";
@@ -14,6 +14,7 @@ import ImagePlaceholder from "@/components/ui/ImagePlaceholder";
 export default function ProductCard({ product }: { product: Product }) {
   const { addItem } = useCart();
   const priceLabel = displayProductPrice(product);
+  const priceDisplay = getPriceDisplay(product);
   const image = product.images[0];
   const placeholderEmoji =
     product.category === "pizza" ? "🍕" : product.category === "snacks" ? "🥟" : "🎂";
@@ -59,7 +60,14 @@ export default function ProductCard({ product }: { product: Product }) {
             <span>({product.reviewCount})</span>
           </div>
         ) : null}
-        <p className="text-rose font-bold">{priceLabel}</p>
+        {priceDisplay.kind === "discount" ? (
+          <p className="flex items-center gap-2">
+            <span className="text-rose font-bold">₹{priceDisplay.price}</span>
+            <span className="text-ink/40 text-sm line-through">₹{priceDisplay.compareAtPrice}</span>
+          </p>
+        ) : (
+          <p className="text-rose font-bold">{priceDisplay.text}</p>
+        )}
 
         <div className="mt-auto pt-2 flex items-center gap-2">
           <button

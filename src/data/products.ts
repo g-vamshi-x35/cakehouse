@@ -5,6 +5,7 @@
 export type WeightOption = {
   label: string;
   price: number | null; // null => "Custom", ask for a quote
+  compareAtPrice?: number; // set to show a struck-through "was" price next to a discount
 };
 
 export const menuCategories = [
@@ -337,4 +338,20 @@ export function displayProductPrice(product: Product): string {
     if (priced.length === 1) return `₹${priced[0].price}`;
   }
   return `₹${product.price}`;
+}
+
+export type PriceDisplay =
+  | { kind: "range"; text: string }
+  | { kind: "discount"; price: number; compareAtPrice: number };
+
+// Cards show a "sale" style price (current price + struck-through original)
+// only when the first priced weight option actually has a compareAtPrice
+// set — otherwise falls back to the normal weight-tier price display.
+export function getPriceDisplay(product: Product): PriceDisplay {
+  const priced = product.weightOptions?.filter((w) => w.price != null) ?? [];
+  const first = priced[0];
+  if (first?.price != null && first.compareAtPrice && first.compareAtPrice > first.price) {
+    return { kind: "discount", price: first.price, compareAtPrice: first.compareAtPrice };
+  }
+  return { kind: "range", text: displayProductPrice(product) };
 }
