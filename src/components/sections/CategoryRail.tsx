@@ -9,13 +9,18 @@ export default async function CategoryRail({
   eyebrow,
   title,
   limit = 6,
+  allProducts,
 }: {
   tag: string;
   eyebrow: string;
   title: string;
   limit?: number;
+  // Pass the already-fetched catalog (e.g. from the homepage, which fetches
+  // once and shares it across every rail) to avoid a redundant DB round
+  // trip. Falls back to fetching its own copy if used standalone.
+  allProducts?: Product[];
 }) {
-  const all = await getAllProducts();
+  const all = allProducts ?? (await getAllProducts());
   const products: Product[] = all.filter((p) => p.tags?.includes(tag)).slice(0, limit);
 
   if (products.length === 0) return null;

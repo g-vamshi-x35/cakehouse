@@ -1,11 +1,9 @@
 import SectionReveal from "@/components/ui/SectionReveal";
 import ProductCard from "@/components/ui/ProductCard";
 import Button from "@/components/ui/Button";
-import { getFeaturedProducts } from "@/lib/data/products";
+import type { Product } from "@/data/products";
 
-export default async function FeaturedMenu() {
-  const products = await getFeaturedProducts();
-
+export default function FeaturedMenu({ products }: { products: Product[] }) {
   return (
     <section className="bg-cream py-20 md:py-28">
       <div className="container-px">

@@ -23,25 +23,14 @@ import {
 // without waiting on that migration.
 function enrichFromStatic(product: Product): Product {
   const staticMatch = staticGetBySlug(product.slug);
-  if (!staticMatch) {
-    console.log(`[images] "${product.slug}": no static entry to fall back to (using DB images as-is: ${JSON.stringify(product.images)})`);
-    return product;
-  }
+  if (!staticMatch) return product;
 
   const weightOptions: WeightOption[] | undefined = product.weightOptions?.map((w) => {
     const staticOption = staticMatch.weightOptions?.find((sw) => sw.label === w.label);
     return staticOption?.compareAtPrice ? { ...w, compareAtPrice: staticOption.compareAtPrice } : w;
   });
 
-  let images = product.images;
-  if (images.length === 0 && staticMatch.images.length > 0) {
-    console.log(`[images] "${product.slug}": DB had no images, falling back to static -> ${JSON.stringify(staticMatch.images)}`);
-    images = staticMatch.images;
-  } else if (images.length > 0) {
-    console.log(`[images] "${product.slug}": using DB image(s) -> ${JSON.stringify(images)}`);
-  } else {
-    console.log(`[images] "${product.slug}": no DB images and no static image found (path attempted: /images/products/cakes/${product.slug}/1.jpg) -> showing placeholder`);
-  }
+  const images = product.images.length === 0 ? staticMatch.images : product.images;
 
   return {
     ...product,
