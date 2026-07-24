@@ -21,7 +21,7 @@ export default async function Home() {
       <WhyChooseUs />
       <FeaturedMenu products={featuredProducts} />
       <CategoryRail tag="new-arrivals" eyebrow="Just Added" title="New Arrivals" allProducts={products} />
-      <CategoryRail tag="premium-cakes" eyebrow="Something Special" title="Premium Cakes" allProducts={products} />
+      <CategoryRail tag="designer-cakes" eyebrow="Something Special" title="Designer Cakes" allProducts={products} />
       <AboutTeaser />
       <CTABand />
     </>
