@@ -7,20 +7,20 @@ import { FaWhatsapp } from "react-icons/fa";
 import type { Product } from "@/data/products";
 import { displayProductPrice, getPriceDisplay } from "@/data/products";
 import { orderOnWhatsAppLink } from "@/lib/whatsapp";
-import { useCart } from "@/components/cart/CartContext";
+import { useQuickOrder } from "@/components/order/QuickOrderContext";
 import StarRating from "@/components/ui/StarRating";
 import ImagePlaceholder from "@/components/ui/ImagePlaceholder";
 
 export default function ProductCard({ product }: { product: Product }) {
-  const { addItem } = useCart();
+  const { open } = useQuickOrder();
   const priceLabel = displayProductPrice(product);
   const priceDisplay = getPriceDisplay(product);
   const image = product.images[0];
   const placeholderEmoji =
     product.category === "pizza" ? "🍕" : product.category === "snacks" ? "🥟" : "🎂";
-  const firstPricedWeight = product.weightOptions?.find((w) => w.price != null);
-  const unitPrice = firstPricedWeight?.price ?? product.price;
   const href = `/menu/${product.slug}`;
+  // Theme/design cakes need a real design conversation, not a quick-buy form.
+  const isCustomCake = product.category === "customized-cakes";
 
   return (
     <div className="group relative rounded-3xl overflow-hidden bg-cream shadow-sm hover:shadow-xl transition-shadow duration-300 flex flex-col">
@@ -70,21 +70,21 @@ export default function ProductCard({ product }: { product: Product }) {
         )}
 
         <div className="mt-auto pt-2 flex items-center gap-2">
-          <button
-            onClick={() =>
-              addItem({
-                productId: product.id,
-                name: product.name,
-                image,
-                unitPrice,
-                weightLabel: firstPricedWeight?.label,
-                flavour: product.flavours?.[0],
-              })
-            }
-            className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-full bg-rose text-white text-sm font-semibold py-2.5 hover:bg-brown transition-colors"
-          >
-            <FiShoppingBag size={15} /> Add
-          </button>
+          {isCustomCake ? (
+            <Link
+              href={`/custom-cake?product=${product.slug}`}
+              className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-full bg-rose text-white text-sm font-semibold py-2.5 hover:bg-brown transition-colors"
+            >
+              Customize
+            </Link>
+          ) : (
+            <button
+              onClick={() => open(product)}
+              className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-full bg-rose text-white text-sm font-semibold py-2.5 hover:bg-brown transition-colors"
+            >
+              <FiShoppingBag size={15} /> Order Now
+            </button>
+          )}
           <a
             href={orderOnWhatsAppLink({ name: product.name, priceLabel })}
             target="_blank"

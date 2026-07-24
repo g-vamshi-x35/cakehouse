@@ -2,30 +2,23 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
-import { MIN_ADVANCE_AMOUNT } from "@/lib/orders/constants";
-import { sendEmail, orderConfirmationEmail } from "@/lib/email";
+import { QUICK_ORDER_ADVANCE_AMOUNT } from "@/lib/orders/constants";
 
-export type OrderItemInput = {
+export type QuickOrderInput = {
   productId: string;
-  name: string;
+  productName: string;
   weightLabel?: string;
   flavour?: string;
   customMessage?: string;
   qty: number;
   unitPrice: number;
-};
-
-export type PlaceOrderInput = {
-  items: OrderItemInput[];
   customerName: string;
   phone: string;
-  email?: string;
   address: string;
   deliveryInstructions?: string;
   eventDate?: string;
   eventTime?: string;
-  paymentMethod: "razorpay_full" | "razorpay_advance" | "qr_advance";
-  advanceAmount?: number;
+  paymentMethod: "razorpay" | "qr_manual";
   couponCode?: string;
 };
 
@@ -33,13 +26,12 @@ export type PlaceOrderResult =
   | { ok: true; orderId: string; orderNumber: string; total: number; advanceAmount: number }
   | { ok: false; error: string };
 
-export async function placeOrderAction(input: PlaceOrderInput): Promise<PlaceOrderResult> {
-  if (input.items.length === 0) return { ok: false, error: "Your cart is empty." };
+export async function placeQuickOrderAction(input: QuickOrderInput): Promise<PlaceOrderResult> {
   if (!input.customerName.trim() || !input.phone.trim() || !input.address.trim()) {
     return { ok: false, error: "Please fill in your name, phone number and delivery address." };
   }
 
-  const subtotal = input.items.reduce((sum, i) => sum + i.unitPrice * i.qty, 0);
+  const subtotal = input.unitPrice * input.qty;
 
   if (!isSupabaseConfigured()) {
     return {
@@ -77,12 +69,9 @@ export async function placeOrderAction(input: PlaceOrderInput): Promise<PlaceOrd
   }
 
   const total = Math.max(0, subtotal - discount);
-  const advanceAmount =
-    input.paymentMethod === "razorpay_full"
-      ? total
-      : Math.max(MIN_ADVANCE_AMOUNT, input.advanceAmount ?? MIN_ADVANCE_AMOUNT);
-
-  const paymentMethod = input.paymentMethod === "qr_advance" ? "qr_manual" : "razorpay";
+  // Can't take a bigger advance than the order is actually worth (matters for
+  // low-priced snack items under the fixed advance amount).
+  const advanceAmount = Math.min(QUICK_ORDER_ADVANCE_AMOUNT, total);
 
   const { data: order, error: orderError } = await supabase
     .from("orders")
@@ -90,7 +79,7 @@ export async function placeOrderAction(input: PlaceOrderInput): Promise<PlaceOrd
       customer_id: user?.id ?? null,
       customer_name: input.customerName.trim(),
       customer_phone: input.phone.trim(),
-      customer_email: input.email?.trim() || null,
+      customer_email: null,
       delivery_address: input.address.trim(),
       delivery_instructions: input.deliveryInstructions?.trim() || null,
       event_date: input.eventDate || null,
@@ -100,7 +89,7 @@ export async function placeOrderAction(input: PlaceOrderInput): Promise<PlaceOrd
       coupon_id: couponId,
       total,
       advance_amount: advanceAmount,
-      payment_method: paymentMethod,
+      payment_method: input.paymentMethod,
       payment_status: "unpaid",
       order_status: "pending",
     })
@@ -111,19 +100,17 @@ export async function placeOrderAction(input: PlaceOrderInput): Promise<PlaceOrd
     return { ok: false, error: orderError?.message || "Could not create your order. Please try again." };
   }
 
-  const { error: itemsError } = await supabase.from("order_items").insert(
-    input.items.map((item) => ({
-      order_id: order.id,
-      product_id: item.productId,
-      product_name: item.name,
-      weight_label: item.weightLabel ?? null,
-      flavour: item.flavour ?? null,
-      custom_message: item.customMessage ?? null,
-      quantity: item.qty,
-      unit_price: item.unitPrice,
-      line_total: item.unitPrice * item.qty,
-    }))
-  );
+  const { error: itemsError } = await supabase.from("order_items").insert({
+    order_id: order.id,
+    product_id: input.productId,
+    product_name: input.productName,
+    weight_label: input.weightLabel ?? null,
+    flavour: input.flavour ?? null,
+    custom_message: input.customMessage ?? null,
+    quantity: input.qty,
+    unit_price: input.unitPrice,
+    line_total: input.unitPrice * input.qty,
+  });
 
   if (itemsError) {
     return { ok: false, error: itemsError.message };
@@ -140,15 +127,6 @@ export async function placeOrderAction(input: PlaceOrderInput): Promise<PlaceOrd
       body: `Your order for ₹${total} has been received. We'll keep you posted as it moves along.`,
       type: "order",
     });
-  }
-
-  if (input.email) {
-    const { subject, text } = orderConfirmationEmail({
-      orderNumber: order.order_number,
-      total,
-      advanceAmount,
-    });
-    await sendEmail({ to: input.email, subject, text });
   }
 
   return { ok: true, orderId: order.id, orderNumber: order.order_number, total, advanceAmount };

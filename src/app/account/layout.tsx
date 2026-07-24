@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { FiUser, FiPackage, FiMapPin, FiHeart, FiBell, FiLogOut, FiShoppingBag } from "react-icons/fi";
+import { FiUser, FiPackage, FiMapPin, FiHeart, FiBell, FiLogOut } from "react-icons/fi";
 import PageHero from "@/components/ui/PageHero";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
@@ -10,7 +10,6 @@ import { signOutAction } from "@/lib/auth/actions";
 const NAV = [
   { href: "/account/profile", label: "Profile", icon: FiUser },
   { href: "/account/orders", label: "My Orders", icon: FiPackage },
-  { href: "/account/cart", label: "Cart", icon: FiShoppingBag },
   { href: "/account/addresses", label: "Addresses", icon: FiMapPin },
   { href: "/account/wishlist", label: "Wishlist", icon: FiHeart },
   { href: "/account/notifications", label: "Notifications", icon: FiBell },

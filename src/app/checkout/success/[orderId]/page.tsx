@@ -11,6 +11,7 @@ import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { business } from "@/data/business";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
 import type { PaymentStatus } from "@/lib/supabase/types";
+import { QUICK_ORDER_ADVANCE_AMOUNT, MIN_LEAD_HOURS, MAX_LEAD_HOURS_NOTICE } from "@/lib/orders/constants";
 
 export const metadata: Metadata = { title: "Order Confirmed | Cake House" };
 
@@ -125,6 +126,15 @@ export default async function OrderSuccessPage({ params, searchParams }: Props) 
               <DetailRow label="Delivery Address" value={order.delivery_address} />
               <DetailRow label="Phone Number" value={order.customer_phone} />
               <DetailRow label="Total Amount" value={`₹${order.total}`} />
+              <DetailRow label="Advance Paid" value={`₹${order.advance_amount}`} />
+              <DetailRow
+                label="Remaining Amount"
+                value={`₹${Math.max(0, order.total - order.advance_amount)}`}
+              />
+              <DetailRow
+                label="Estimated Preparation Time"
+                value={`${MIN_LEAD_HOURS}–${MAX_LEAD_HOURS_NOTICE} hours`}
+              />
               {statusInfo && (
                 <div className="flex justify-between items-center gap-3 pt-1">
                   <span className="text-ink/50">Payment Status</span>
@@ -143,7 +153,7 @@ export default async function OrderSuccessPage({ params, searchParams }: Props) 
               <p className="text-sm font-semibold text-brown mb-3 text-center">
                 Please complete your advance payment now
               </p>
-              <PaymentQrCard amount={Number(amount) || 200} />
+              <PaymentQrCard amount={Number(amount) || QUICK_ORDER_ADVANCE_AMOUNT} />
             </div>
           )}
 
@@ -160,7 +170,7 @@ export default async function OrderSuccessPage({ params, searchParams }: Props) 
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center gap-2 rounded-full bg-[#25D366] text-white font-semibold px-6 py-3 hover:opacity-90 transition-opacity"
             >
-              <FaWhatsapp /> Order on WhatsApp
+              <FaWhatsapp /> WhatsApp Bakery
             </a>
           </div>
 

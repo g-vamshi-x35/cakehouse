@@ -7,7 +7,6 @@ import { usePathname } from "next/navigation";
 import {
   FiMenu,
   FiX,
-  FiShoppingBag,
   FiUser,
   FiPackage,
   FiHeart,
@@ -17,8 +16,6 @@ import {
   FiYoutube,
 } from "react-icons/fi";
 import { FaWhatsapp } from "react-icons/fa";
-import { useCart } from "@/components/cart/CartContext";
-import CartDrawer from "@/components/cart/CartDrawer";
 import { business } from "@/data/business";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
 
@@ -35,7 +32,6 @@ export default function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
-  const { count, open: openCart } = useCart();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
@@ -108,18 +104,6 @@ export default function Header() {
             >
               <FiUser size={22} />
             </Link>
-            <button
-              onClick={openCart}
-              className="relative p-2 text-brown hover:text-rose transition-colors"
-              aria-label="Open cart"
-            >
-              <FiShoppingBag size={22} />
-              {count > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 bg-rose text-white text-[10px] font-bold rounded-full w-4.5 h-4.5 min-w-[18px] h-[18px] flex items-center justify-center">
-                  {count}
-                </span>
-              )}
-            </button>
             <Link
               href="/menu"
               className="hidden md:inline-block ml-2 rounded-full bg-rose text-white text-sm font-semibold px-5 py-2.5 hover:bg-brown transition-colors"
@@ -208,8 +192,6 @@ export default function Header() {
           </div>
         </nav>
       </div>
-
-      <CartDrawer />
     </>
   );
 }

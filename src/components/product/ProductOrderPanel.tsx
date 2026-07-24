@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { FiMinus, FiPlus, FiClock, FiShoppingBag } from "react-icons/fi";
+import Link from "next/link";
+import { FiMinus, FiPlus, FiClock } from "react-icons/fi";
 import { FaWhatsapp } from "react-icons/fa";
 import type { Product } from "@/data/products";
-import { useCart } from "@/components/cart/CartContext";
+import { useQuickOrder } from "@/components/order/QuickOrderContext";
 import { orderOnWhatsAppLink } from "@/lib/whatsapp";
 
 const inputClasses =
@@ -16,15 +16,16 @@ function minAdvanceLeadHours() {
 }
 
 export default function ProductOrderPanel({ product }: { product: Product }) {
-  const { hydrated } = useCart();
-  // Remount once cart/localStorage hydration completes so the customer-info
-  // fields below pick up any previously saved name/phone/address.
+  const { hydrated } = useQuickOrder();
+  // Remount once localStorage hydration completes so the WhatsApp fallback
+  // link below picks up any previously saved name/phone/address.
   return <ProductOrderPanelInner key={hydrated ? "ready" : "loading"} product={product} />;
 }
 
 function ProductOrderPanelInner({ product }: { product: Product }) {
-  const router = useRouter();
-  const { addItem, setCheckoutInfo, checkoutInfo } = useCart();
+  const { open, savedInfo } = useQuickOrder();
+  // Theme/design cakes need a real design conversation, not a quick-buy form.
+  const isCustomCake = product.category === "customized-cakes";
 
   const weightOptions = product.weightOptions;
   const [weight, setWeight] = useState(weightOptions?.[0]?.label);
@@ -33,11 +34,6 @@ function ProductOrderPanelInner({ product }: { product: Product }) {
   const [customMessage, setCustomMessage] = useState("");
   const [eventDate, setEventDate] = useState("");
   const [eventTime, setEventTime] = useState("");
-  const [name, setName] = useState(checkoutInfo.name);
-  const [phone, setPhone] = useState(checkoutInfo.phone);
-  const [address, setAddress] = useState(checkoutInfo.address);
-  const [instructions, setInstructions] = useState(checkoutInfo.deliveryInstructions);
-  const [addedMessage, setAddedMessage] = useState(false);
 
   const selectedWeightOption = weightOptions?.find((w) => w.label === weight);
   const isCustomWeight = weight === "Custom" || (selectedWeightOption && selectedWeightOption.price == null);
@@ -71,43 +67,15 @@ function ProductOrderPanelInner({ product }: { product: Product }) {
     setLeadTimeWarning(hoursAway < minAdvanceLeadHours() && hoursAway >= 0);
   }
 
-  function syncCheckoutInfo() {
-    setCheckoutInfo({ name, phone, address, deliveryInstructions: instructions });
-  }
-
-  function handleAddToCart() {
-    syncCheckoutInfo();
-    addItem({
-      productId: product.id,
-      name: product.name,
-      image: product.images[0],
-      unitPrice: unitPrice ?? product.price,
-      qty,
-      weightLabel: weight,
+  function handleOrderNow() {
+    open(product, {
+      weight,
       flavour,
+      qty,
       customMessage: customMessage || undefined,
       eventDate: eventDate || undefined,
       eventTime: eventTime || undefined,
     });
-    setAddedMessage(true);
-    setTimeout(() => setAddedMessage(false), 2500);
-  }
-
-  function handleBuyNow() {
-    syncCheckoutInfo();
-    addItem({
-      productId: product.id,
-      name: product.name,
-      image: product.images[0],
-      unitPrice: unitPrice ?? product.price,
-      qty,
-      weightLabel: weight,
-      flavour,
-      customMessage: customMessage || undefined,
-      eventDate: eventDate || undefined,
-      eventTime: eventTime || undefined,
-    });
-    router.push("/checkout");
   }
 
   const whatsappHref = orderOnWhatsAppLink({
@@ -119,11 +87,44 @@ function ProductOrderPanelInner({ product }: { product: Product }) {
     customMessage,
     eventDate,
     eventTime,
-    customerName: name,
-    phone,
-    address,
-    deliveryInstructions: instructions,
+    customerName: savedInfo.name,
+    phone: savedInfo.phone,
+    address: savedInfo.address,
+    deliveryInstructions: savedInfo.deliveryInstructions,
   });
+
+  if (isCustomCake) {
+    return (
+      <div className="bg-cream-light rounded-3xl p-6 md:p-8 space-y-6">
+        <div>
+          <p className="text-rose font-bold text-2xl">
+            {isCustomWeight ? "Price on request" : `From ₹${unitPrice}`}
+          </p>
+          {product.note && <p className="text-xs text-ink/50 mt-1">{product.note}</p>}
+        </div>
+        <p className="text-sm text-ink/70 leading-relaxed">
+          This is a custom design cake — tell us the theme, size and any inspiration photos and
+          we&apos;ll get back to you with a design and a quote.
+        </p>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <Link
+            href={`/custom-cake?product=${product.slug}`}
+            className="flex-1 inline-flex items-center justify-center rounded-full bg-rose text-white font-semibold py-3.5 hover:bg-brown transition-colors"
+          >
+            Request Custom Quote
+          </Link>
+          <a
+            href={whatsappHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-[#25D366] text-white font-semibold py-3.5 hover:opacity-90 transition-opacity"
+          >
+            <FaWhatsapp size={18} /> WhatsApp
+          </a>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-cream-light rounded-3xl p-6 md:p-8 space-y-6">
@@ -271,63 +272,19 @@ function ProductOrderPanelInner({ product }: { product: Product }) {
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Your Name"
-          className={inputClasses}
-        />
-        <input
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          placeholder="Phone Number"
-          type="tel"
-          className={inputClasses}
-        />
-      </div>
-      <textarea
-        value={address}
-        onChange={(e) => setAddress(e.target.value)}
-        placeholder="Delivery Address"
-        rows={2}
-        className={`${inputClasses} resize-none`}
-      />
-      <input
-        value={instructions}
-        onChange={(e) => setInstructions(e.target.value)}
-        placeholder="Delivery instructions (optional)"
-        className={inputClasses}
-      />
-
       {missingSchedule && (
         <p className="text-xs text-brown/70 bg-cream rounded-lg px-4 py-2">
-          Please choose a delivery date and time above to add this to your cart.
+          Please choose a delivery date and time above to continue.
         </p>
       )}
 
-      <div className="flex flex-col sm:flex-row gap-3 pt-2">
-        <button
-          onClick={handleAddToCart}
-          disabled={!canOrder}
-          className="flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-cream border-2 border-brown text-brown font-semibold py-3.5 hover:bg-brown hover:text-cream-light transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          <FiShoppingBag /> Add to Cart
-        </button>
-        <button
-          onClick={handleBuyNow}
-          disabled={!canOrder}
-          className="flex-1 rounded-full bg-rose text-white font-semibold py-3.5 hover:bg-brown transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          Buy Now
-        </button>
-      </div>
-
-      {addedMessage && (
-        <p className="text-sm text-green-700 bg-green-50 rounded-lg px-4 py-2 text-center">
-          Added to cart!
-        </p>
-      )}
+      <button
+        onClick={handleOrderNow}
+        disabled={!canOrder}
+        className="w-full rounded-full bg-rose text-white font-semibold py-3.5 hover:bg-brown transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+      >
+        Order Now
+      </button>
 
       <a
         href={whatsappHref}

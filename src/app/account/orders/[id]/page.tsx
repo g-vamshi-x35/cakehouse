@@ -7,6 +7,7 @@ import OrderStatusBadge, {
 } from "@/components/account/OrderStatusBadge";
 import ReorderButton from "@/components/account/ReorderButton";
 import { createClient } from "@/lib/supabase/server";
+import { getProductById } from "@/lib/data/products";
 
 export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -30,6 +31,9 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
     .from("order_items")
     .select("product_id, product_name, weight_label, flavour, custom_message, quantity, unit_price, line_total")
     .eq("order_id", id);
+
+  const firstItem = items?.[0];
+  const reorderProduct = firstItem?.product_id ? await getProductById(firstItem.product_id) : undefined;
 
   const isCancelled = order.order_status === "cancelled";
   const currentStepIndex = ORDER_STATUS_STEPS.indexOf(order.order_status);
@@ -132,7 +136,15 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
         </div>
       </div>
 
-      <ReorderButton items={items ?? []} />
+      {reorderProduct && firstItem && (
+        <ReorderButton
+          product={reorderProduct}
+          weightLabel={firstItem.weight_label ?? undefined}
+          flavour={firstItem.flavour ?? undefined}
+          quantity={firstItem.quantity}
+          customMessage={firstItem.custom_message ?? undefined}
+        />
+      )}
     </div>
   );
 }

@@ -135,6 +135,19 @@ export async function getProductBySlug(slug: string): Promise<Product | undefine
   return enrichFromStatic(mapRow(data as unknown as DbProductRow));
 }
 
+// Only meaningful once Supabase is configured — an order_items.product_id is
+// always a DB row UUID, never a static-catalog id, so there's no offline
+// fallback to fall back to here (unlike the slug-based lookups above).
+export async function getProductById(id: string): Promise<Product | undefined> {
+  if (!isSupabaseConfigured()) return undefined;
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("products").select(SELECT).eq("id", id).maybeSingle();
+
+  if (error || !data) return undefined;
+  return enrichFromStatic(mapRow(data as unknown as DbProductRow));
+}
+
 export async function getFeaturedProducts(): Promise<Product[]> {
   if (!isSupabaseConfigured()) return staticGetFeatured();
 

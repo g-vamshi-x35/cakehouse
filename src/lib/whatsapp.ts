@@ -52,23 +52,3 @@ export function orderOnWhatsAppLink(item: WhatsAppOrderConfig): string {
 
   return buildWhatsAppLink(lines.join("\n"));
 }
-
-export function cartWhatsAppLink(
-  items: WhatsAppOrderConfig[],
-  checkout?: { name?: string; phone?: string; address?: string; deliveryInstructions?: string }
-): string {
-  const itemLines = items.flatMap((item) => {
-    const qtyText = item.qty && item.qty > 1 ? ` x${item.qty}` : "";
-    const priceText = item.priceLabel ? ` (${item.priceLabel})` : "";
-    return [`- ${item.name}${qtyText}${priceText}`, ...formatConfigLines(item)];
-  });
-
-  const lines = [`Hi ${business.name}! I'd like to order:`, ...itemLines];
-
-  if (checkout?.name) lines.push(`\nName: ${checkout.name}`);
-  if (checkout?.phone) lines.push(`Phone: ${checkout.phone}`);
-  if (checkout?.address) lines.push(`Delivery Address: ${checkout.address}`);
-  if (checkout?.deliveryInstructions) lines.push(`Delivery Instructions: ${checkout.deliveryInstructions}`);
-
-  return buildWhatsAppLink(lines.join("\n"));
-}

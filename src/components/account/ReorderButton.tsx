@@ -1,42 +1,30 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { FiRepeat } from "react-icons/fi";
-import { useCart } from "@/components/cart/CartContext";
+import type { Product } from "@/data/products";
+import { useQuickOrder } from "@/components/order/QuickOrderContext";
 
-type ReorderItem = {
-  product_id: string | null;
-  product_name: string;
-  weight_label: string | null;
-  flavour: string | null;
-  custom_message: string | null;
+type Props = {
+  product: Product;
+  weightLabel?: string;
+  flavour?: string;
   quantity: number;
-  unit_price: number;
+  customMessage?: string;
 };
 
-export default function ReorderButton({ items }: { items: ReorderItem[] }) {
-  const router = useRouter();
-  const { addItem } = useCart();
-
-  function handleReorder() {
-    items.forEach((item) => {
-      if (!item.product_id) return;
-      addItem({
-        productId: item.product_id,
-        name: item.product_name,
-        unitPrice: item.unit_price,
-        qty: item.quantity,
-        weightLabel: item.weight_label ?? undefined,
-        flavour: item.flavour ?? undefined,
-        customMessage: item.custom_message ?? undefined,
-      });
-    });
-    router.push("/checkout");
-  }
+export default function ReorderButton({ product, weightLabel, flavour, quantity, customMessage }: Props) {
+  const { open } = useQuickOrder();
 
   return (
     <button
-      onClick={handleReorder}
+      onClick={() =>
+        open(product, {
+          weight: weightLabel,
+          flavour,
+          qty: quantity,
+          customMessage,
+        })
+      }
       className="inline-flex items-center gap-2 rounded-full bg-rose text-white font-semibold px-6 py-3 hover:bg-brown transition-colors"
     >
       <FiRepeat /> Reorder

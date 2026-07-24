@@ -3,7 +3,7 @@ import { Playfair_Display, Lato } from "next/font/google";
 import "./globals.css";
 import ChromeGate from "@/components/layout/ChromeGate";
 import ToastProvider from "@/components/layout/ToastProvider";
-import { CartProvider } from "@/components/cart/CartContext";
+import { QuickOrderProvider } from "@/components/order/QuickOrderContext";
 
 const playfair = Playfair_Display({
   variable: "--font-playfair",
@@ -37,9 +37,9 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-cream-light text-ink">
         <ToastProvider />
-        <CartProvider>
+        <QuickOrderProvider>
           <ChromeGate>{children}</ChromeGate>
-        </CartProvider>
+        </QuickOrderProvider>
       </body>
     </html>
   );
