@@ -1,9 +1,11 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 
 export type AuthActionState = { error?: string } | null;
+export type ForgotPasswordState = { error?: string; success?: boolean } | null;
 
 function readNext(formData: FormData): string {
   const next = formData.get("next");
@@ -76,6 +78,27 @@ export async function staffSignInAction(
 
   await supabase.auth.signOut();
   return { error: "This account doesn't have staff access." };
+}
+
+export async function requestPasswordResetAction(
+  _prevState: ForgotPasswordState,
+  formData: FormData
+): Promise<ForgotPasswordState> {
+  const email = String(formData.get("email") || "").trim();
+  if (!email) return { error: "Please enter your email address." };
+
+  const origin = (await headers()).get("origin") ?? "";
+  const supabase = await createClient();
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${origin}/reset-password`,
+  });
+
+  // Always report success regardless of whether the email exists — this is
+  // the standard anti-enumeration pattern so a bad actor can't use this form
+  // to discover which addresses have accounts. The one exception worth
+  // surfacing is rate-limiting, since that's actionable for a real user.
+  if (error?.status === 429) return { error: "Too many attempts — please wait a bit and try again." };
+  return { success: true };
 }
 
 export async function signOutAction() {

@@ -21,6 +21,11 @@ export default function LoginForm({ next }: { next?: string }) {
 
       <input name="email" type="email" required placeholder="Email Address" className={inputClasses} />
       <input name="password" type="password" required placeholder="Password" className={inputClasses} />
+      <p className="text-right -mt-2">
+        <Link href="/forgot-password" className="text-xs text-ink/50 hover:text-rose">
+          Forgot password?
+        </Link>
+      </p>
 
       {state?.error && (
         <p className="text-sm text-red-600 bg-red-50 rounded-lg px-4 py-2">{state.error}</p>
