@@ -27,7 +27,8 @@ export default function ImageUploadField({
       if (uploadError) throw uploadError;
       const { data } = supabase.storage.from("uploads").getPublicUrl(path);
       setUrl(data.publicUrl);
-    } catch {
+    } catch (err) {
+      console.error("Image upload failed:", err);
       setError("Couldn't upload that image — please try a different file.");
     } finally {
       setUploading(false);
