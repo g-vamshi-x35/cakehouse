@@ -52,6 +52,7 @@ export interface Database {
         {
           id: string;
           slug: string;
+          sku: string | null;
           name: string;
           category_id: string | null;
           description: string | null;
@@ -71,6 +72,7 @@ export interface Database {
         {
           id?: string;
           slug: string;
+          sku?: string | null;
           name: string;
           category_id?: string | null;
           description?: string | null;

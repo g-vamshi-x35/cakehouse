@@ -9,7 +9,7 @@ export default async function ProductsPage() {
   const supabase = await createClient();
   const { data: products } = await supabase
     .from("products")
-    .select("id, name, slug, price_500, base_price, is_active, is_featured, categories ( name )")
+    .select("id, name, slug, sku, price_500, base_price, is_active, is_featured, categories ( name )")
     .order("created_at", { ascending: false });
 
   return (
@@ -27,11 +27,12 @@ export default async function ProductsPage() {
         }
       />
 
-      <AdminTable columns={["Name", "Category", "Price", "Status", "Featured", ""]}>
+      <AdminTable columns={["SKU", "Name", "Category", "Price", "Status", "Featured", ""]}>
         {(products ?? []).map((p) => {
           const category = Array.isArray(p.categories) ? p.categories[0] : p.categories;
           return (
             <tr key={p.id}>
+              <td className="px-4 py-3 text-ink/50 font-mono text-xs">{p.sku ?? "—"}</td>
               <td className="px-4 py-3 font-semibold text-ink">{p.name}</td>
               <td className="px-4 py-3 text-ink/60">{category?.name ?? "—"}</td>
               <td className="px-4 py-3">₹{p.price_500 ?? p.base_price ?? "—"}</td>
@@ -57,7 +58,7 @@ export default async function ProductsPage() {
         })}
         {(!products || products.length === 0) && (
           <tr>
-            <td colSpan={6} className="px-4 py-8 text-center text-ink/50">
+            <td colSpan={7} className="px-4 py-8 text-center text-ink/50">
               No products yet.
             </td>
           </tr>
