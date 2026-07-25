@@ -66,7 +66,11 @@ export default function Header() {
               className="rounded-full object-cover w-10 h-10 md:w-11 md:h-11"
               priority
             />
-            <span className="font-heading text-xl md:text-2xl font-bold text-brown leading-none">
+            <span
+              className={`font-heading text-xl md:text-2xl font-bold leading-none transition-colors duration-300 ${
+                scrolled ? "text-brown" : "text-cream-light"
+              }`}
+            >
               Cake House
             </span>
           </Link>
