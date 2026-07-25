@@ -4,6 +4,7 @@ import AboutStory from "@/components/sections/AboutStory";
 import ValuesGrid from "@/components/sections/ValuesGrid";
 import TeamSection from "@/components/sections/TeamSection";
 import Gallery from "@/components/sections/Gallery";
+import TestimonialsSection from "@/components/sections/TestimonialsSection";
 import CTABand from "@/components/sections/CTABand";
 
 export const metadata: Metadata = {
@@ -24,6 +25,7 @@ export default function AboutPage() {
       <ValuesGrid />
       <TeamSection />
       <Gallery />
+      <TestimonialsSection />
       <CTABand />
     </>
   );

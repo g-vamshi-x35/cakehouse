@@ -50,3 +50,45 @@ export function averageRating(reviews: ReviewWithAuthor[]): number | null {
   const sum = reviews.reduce((acc, r) => acc + r.rating, 0);
   return Math.round((sum / reviews.length) * 10) / 10;
 }
+
+export type FeaturedReview = ReviewWithAuthor & {
+  product_name: string;
+  product_slug: string;
+};
+
+type DbFeaturedReviewRow = DbReviewRow & {
+  products: { name: string; slug: string } | { name: string; slug: string }[] | null;
+};
+
+// Site-wide highlights for the About page — best-rated reviews that also
+// have a comment (a bare star rating with no text doesn't make a good quote).
+export async function getFeaturedReviews(limit = 6): Promise<FeaturedReview[]> {
+  if (!isSupabaseConfigured()) return [];
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("reviews")
+    .select("id, rating, comment, is_verified, created_at, guest_name, profiles ( full_name ), products ( name, slug )")
+    .not("comment", "is", null)
+    .gte("rating", 4)
+    .order("rating", { ascending: false })
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error || !data) return [];
+
+  return (data as unknown as DbFeaturedReviewRow[]).map((r) => {
+    const profile = Array.isArray(r.profiles) ? r.profiles[0] : r.profiles;
+    const product = Array.isArray(r.products) ? r.products[0] : r.products;
+    return {
+      id: r.id,
+      rating: r.rating,
+      comment: r.comment,
+      is_verified: r.is_verified,
+      created_at: r.created_at,
+      author_name: profile?.full_name || r.guest_name || "Cake House Customer",
+      product_name: product?.name ?? "",
+      product_slug: product?.slug ?? "",
+    };
+  });
+}

@@ -1,15 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { FiChevronRight } from "react-icons/fi";
 import ProductGallery from "@/components/product/ProductGallery";
 import ProductOrderPanel from "@/components/product/ProductOrderPanel";
-import SimilarProducts from "@/components/product/SimilarProducts";
+import SimilarProductsSection from "@/components/product/SimilarProductsSection";
 import ProductReviews from "@/components/product/ProductReviews";
 import SectionReveal from "@/components/ui/SectionReveal";
 import StarRating from "@/components/ui/StarRating";
 import WishlistButton from "@/components/product/WishlistButton";
-import { getProductBySlug, getSimilarProducts } from "@/lib/data/products";
+import { getProductBySlug } from "@/lib/data/products";
 import { SHELF_LIFE, STORAGE_INSTRUCTIONS, servingSizeFor } from "@/data/products";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
@@ -31,7 +32,6 @@ export default async function ProductPage({ params }: Props) {
   const product = await getProductBySlug(slug);
   if (!product) notFound();
 
-  const similar = await getSimilarProducts(product);
   const placeholderEmoji =
     product.category === "pizza" ? "🍕" : product.category === "snacks" ? "🥟" : "🎂";
 
@@ -159,8 +159,12 @@ export default async function ProductPage({ params }: Props) {
         </section>
       )}
 
-      <SimilarProducts products={similar} />
-      <ProductReviews productId={product.id} productSlug={product.slug} />
+      <Suspense fallback={null}>
+        <SimilarProductsSection product={product} />
+      </Suspense>
+      <Suspense fallback={null}>
+        <ProductReviews productId={product.id} productSlug={product.slug} />
+      </Suspense>
     </>
   );
 }

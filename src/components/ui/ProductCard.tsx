@@ -5,15 +5,15 @@ import Link from "next/link";
 import { FiShoppingBag } from "react-icons/fi";
 import { FaWhatsapp } from "react-icons/fa";
 import type { Product } from "@/data/products";
-import { displayProductPrice, getPriceDisplay } from "@/data/products";
-import { orderOnWhatsAppLink } from "@/lib/whatsapp";
+import { getPriceDisplay } from "@/data/products";
+import { buildWhatsAppLink } from "@/lib/whatsapp";
+import { business } from "@/data/business";
 import { useQuickOrder } from "@/components/order/QuickOrderContext";
 import StarRating from "@/components/ui/StarRating";
 import ImagePlaceholder from "@/components/ui/ImagePlaceholder";
 
 export default function ProductCard({ product }: { product: Product }) {
   const { open } = useQuickOrder();
-  const priceLabel = displayProductPrice(product);
   const priceDisplay = getPriceDisplay(product);
   const image = product.images[0];
   const placeholderEmoji =
@@ -86,10 +86,10 @@ export default function ProductCard({ product }: { product: Product }) {
             </button>
           )}
           <a
-            href={orderOnWhatsAppLink({ name: product.name, priceLabel })}
+            href={buildWhatsAppLink(`Hi ${business.name}! I have a question about the ${product.name}.`)}
             target="_blank"
             rel="noopener noreferrer"
-            aria-label={`Order ${product.name} on WhatsApp`}
+            aria-label={`Ask about ${product.name} on WhatsApp`}
             className="inline-flex items-center justify-center rounded-full border-2 border-brown/20 text-brown w-10 h-10 hover:border-rose hover:text-rose transition-colors shrink-0"
           >
             <FaWhatsapp size={17} />

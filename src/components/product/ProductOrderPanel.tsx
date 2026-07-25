@@ -6,7 +6,8 @@ import { FiMinus, FiPlus, FiClock } from "react-icons/fi";
 import { FaWhatsapp } from "react-icons/fa";
 import type { Product } from "@/data/products";
 import { useQuickOrder } from "@/components/order/QuickOrderContext";
-import { orderOnWhatsAppLink } from "@/lib/whatsapp";
+import { buildWhatsAppLink } from "@/lib/whatsapp";
+import { business } from "@/data/business";
 
 const inputClasses =
   "w-full rounded-xl border border-brown/20 bg-cream px-4 py-3 text-sm text-ink placeholder:text-ink/40 focus:outline-none focus:ring-2 focus:ring-rose/60 transition-shadow";
@@ -16,14 +17,7 @@ function minAdvanceLeadHours() {
 }
 
 export default function ProductOrderPanel({ product }: { product: Product }) {
-  const { hydrated } = useQuickOrder();
-  // Remount once localStorage hydration completes so the WhatsApp fallback
-  // link below picks up any previously saved name/phone/address.
-  return <ProductOrderPanelInner key={hydrated ? "ready" : "loading"} product={product} />;
-}
-
-function ProductOrderPanelInner({ product }: { product: Product }) {
-  const { open, savedInfo } = useQuickOrder();
+  const { open } = useQuickOrder();
   // Theme/design cakes need a real design conversation, not a quick-buy form.
   const isCustomCake = product.category === "customized-cakes";
 
@@ -78,20 +72,10 @@ function ProductOrderPanelInner({ product }: { product: Product }) {
     });
   }
 
-  const whatsappHref = orderOnWhatsAppLink({
-    name: product.name,
-    weightLabel: weight,
-    flavour,
-    qty,
-    priceLabel: total != null ? `₹${total}` : "price on request",
-    customMessage,
-    eventDate,
-    eventTime,
-    customerName: savedInfo.name,
-    phone: savedInfo.phone,
-    address: savedInfo.address,
-    deliveryInstructions: savedInfo.deliveryInstructions,
-  });
+  // WhatsApp is an enquiry channel only — real orders (with advance payment)
+  // go through Order Now / Request Custom Quote, so this stays a simple
+  // question, not a full order summary someone could use to bypass payment.
+  const whatsappHref = buildWhatsAppLink(`Hi ${business.name}! I have a question about the ${product.name}.`);
 
   if (isCustomCake) {
     return (
@@ -106,22 +90,20 @@ function ProductOrderPanelInner({ product }: { product: Product }) {
           This is a custom design cake — tell us the theme, size and any inspiration photos and
           we&apos;ll get back to you with a design and a quote.
         </p>
-        <div className="flex flex-col sm:flex-row gap-3">
-          <Link
-            href={`/custom-cake?product=${product.slug}`}
-            className="flex-1 inline-flex items-center justify-center rounded-full bg-rose text-white font-semibold py-3.5 hover:bg-brown transition-colors"
-          >
-            Request Custom Quote
-          </Link>
-          <a
-            href={whatsappHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-[#25D366] text-white font-semibold py-3.5 hover:opacity-90 transition-opacity"
-          >
-            <FaWhatsapp size={18} /> WhatsApp
-          </a>
-        </div>
+        <Link
+          href={`/custom-cake?product=${product.slug}`}
+          className="block text-center rounded-full bg-rose text-white font-semibold py-3.5 hover:bg-brown transition-colors"
+        >
+          Request Custom Quote
+        </Link>
+        <a
+          href={whatsappHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center justify-center gap-2 text-sm text-brown/60 hover:text-rose transition-colors"
+        >
+          <FaWhatsapp /> Questions? Chat on WhatsApp
+        </a>
       </div>
     );
   }
@@ -286,15 +268,6 @@ function ProductOrderPanelInner({ product }: { product: Product }) {
         Order Now
       </button>
 
-      <a
-        href={whatsappHref}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="flex items-center justify-center gap-2 rounded-full bg-[#25D366] text-white font-semibold py-3.5 hover:opacity-90 transition-opacity"
-      >
-        <FaWhatsapp size={18} /> Order on WhatsApp
-      </a>
-
       {isCustomWeight && (
         <p className="text-xs text-center text-ink/50">
           Custom sizing needs a quick chat — message us on WhatsApp for a quote.
@@ -305,6 +278,15 @@ function ProductOrderPanelInner({ product }: { product: Product }) {
           This item is currently unavailable for online ordering — message us on WhatsApp to check.
         </p>
       )}
+
+      <a
+        href={whatsappHref}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center justify-center gap-2 text-sm text-brown/60 hover:text-rose transition-colors"
+      >
+        <FaWhatsapp /> Questions? Chat on WhatsApp
+      </a>
     </div>
   );
 }

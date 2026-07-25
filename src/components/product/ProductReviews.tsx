@@ -25,7 +25,7 @@ export default async function ProductReviews({
   }
 
   return (
-    <section className="bg-cream-light py-16 md:py-20">
+    <section id="reviews" className="bg-cream-light py-16 md:py-20 scroll-mt-24">
       <div className="container-px max-w-3xl mx-auto">
         <SectionReveal className="mb-8">
           <p className="text-rose font-semibold tracking-[0.25em] uppercase text-xs mb-2">

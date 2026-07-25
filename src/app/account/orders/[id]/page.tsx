@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { FiCheck, FiPrinter } from "react-icons/fi";
+import { FiCheck, FiPrinter, FiStar } from "react-icons/fi";
 import OrderStatusBadge, {
   ORDER_STATUS_STEPS,
   ORDER_STATUS_LABELS,
@@ -135,6 +135,24 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           )}
         </div>
       </div>
+
+      {order.order_status === "delivered" && reorderProduct && (
+        <div className="bg-cream rounded-3xl p-6 flex items-center justify-between flex-wrap gap-4">
+          <div className="flex items-center gap-3">
+            <FiStar className="text-rose text-xl shrink-0" />
+            <div>
+              <p className="font-semibold text-brown">How was your {reorderProduct.name}?</p>
+              <p className="text-sm text-ink/60">Your review helps other customers — and us!</p>
+            </div>
+          </div>
+          <Link
+            href={`/menu/${reorderProduct.slug}#reviews`}
+            className="shrink-0 rounded-full bg-rose text-white text-sm font-semibold px-5 py-2.5 hover:bg-brown transition-colors"
+          >
+            Leave a Review
+          </Link>
+        </div>
+      )}
 
       {reorderProduct && firstItem && (
         <ReorderButton
