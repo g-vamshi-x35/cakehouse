@@ -278,6 +278,7 @@ function QuickOrderModalInner({
     <div
       className="bg-cream-light rounded-3xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl animate-[popIn_0.3s_cubic-bezier(0.34,1.56,0.64,1)]"
       onClick={(e) => e.stopPropagation()}
+      data-lenis-prevent
     >
       {qrPendingOrder ? (
         <div className="p-6 md:p-8 text-center space-y-5">
