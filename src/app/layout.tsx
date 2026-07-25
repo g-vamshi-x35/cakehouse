@@ -22,7 +22,7 @@ const lato = Lato({
 export const metadata: Metadata = {
   title: "Cake House | Sri Marlapolama Bakery — Great Taste In Every Bite",
   description:
-    "Fresh, handcrafted cakes and bakery treats in Kompally. 100% vegetarian & egg-free custom cakes, birthday cakes, wedding cakes, snacks and more. Order on WhatsApp or call us today.",
+    "Fresh, handcrafted cakes and bakery treats in Berhampur, Odisha. 100% vegetarian & egg-free custom cakes, birthday cakes, wedding cakes, snacks and more. Order on WhatsApp or call us today.",
 };
 
 export default function RootLayout({

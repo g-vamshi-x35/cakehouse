@@ -91,7 +91,7 @@ export default function Hero({ videoSrc }: { videoSrc?: string }) {
         </h1>
         <p className="hero-sub text-cream-light/90 text-sm md:text-base max-w-lg mt-4 leading-relaxed">
           100% vegetarian, 100% egg-free custom cakes, birthday cakes, wedding
-          cakes &amp; snacks — handcrafted fresh in Kompally. Great taste, in
+          cakes &amp; snacks — handcrafted fresh in Berhampur. Great taste, in
           every bite.
         </p>
         <div className="flex flex-wrap items-center gap-4 mt-9">
