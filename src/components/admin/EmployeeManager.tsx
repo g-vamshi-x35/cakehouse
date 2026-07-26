@@ -48,6 +48,7 @@ export default function EmployeeManager({ employees }: { employees: Employee[] }
         <input name="password" type="password" placeholder="Temporary Password" required minLength={6} className={inputClasses} />
         <select name="role" defaultValue="employee" className={inputClasses}>
           <option value="employee">Employee</option>
+          <option value="delivery">Delivery</option>
           <option value="owner">Owner (full access)</option>
         </select>
 

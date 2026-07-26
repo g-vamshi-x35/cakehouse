@@ -75,6 +75,7 @@ export async function staffSignInAction(
 
   if (profile?.role === "owner") redirect("/dashboard/owner");
   if (profile?.role === "employee") redirect("/dashboard/employee");
+  if (profile?.role === "delivery") redirect("/dashboard/delivery");
 
   await supabase.auth.signOut();
   return { error: "This account doesn't have staff access." };

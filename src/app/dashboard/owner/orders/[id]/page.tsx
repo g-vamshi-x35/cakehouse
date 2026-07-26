@@ -10,13 +10,14 @@ export default async function OwnerOrderDetailPage({ params }: { params: Promise
   const { id } = await params;
   const supabase = await createClient();
 
-  const [{ data: order }, { data: items }, { data: employees }] = await Promise.all([
+  const [{ data: order }, { data: items }, { data: employees }, { data: deliveryStaff }] = await Promise.all([
     supabase.from("orders").select("*").eq("id", id).maybeSingle(),
     supabase
       .from("order_items")
       .select("product_name, weight_label, flavour, custom_message, quantity, unit_price, line_total")
       .eq("order_id", id),
     supabase.from("profiles").select("id, full_name").in("role", ["employee", "owner"]),
+    supabase.from("profiles").select("id, full_name").eq("role", "delivery"),
   ]);
 
   if (!order) notFound();
@@ -73,6 +74,14 @@ export default async function OwnerOrderDetailPage({ params }: { params: Promise
                   <span>-₹{order.discount}</span>
                 </div>
               )}
+              {order.delivery_charge > 0 && (
+                <div className="flex justify-between text-ink/70">
+                  <span>
+                    Delivery Charge{order.delivery_distance_km != null && ` (${order.delivery_distance_km.toFixed(1)} km)`}
+                  </span>
+                  <span>₹{order.delivery_charge}</span>
+                </div>
+              )}
               <div className="flex justify-between font-bold text-brown">
                 <span>Total</span>
                 <span>₹{order.total}</span>
@@ -83,6 +92,18 @@ export default async function OwnerOrderDetailPage({ params }: { params: Promise
                   ₹{order.advance_amount} via {order.payment_method.replace(/_/g, " ")}
                 </span>
               </div>
+              {order.order_status === "delivered" && (
+                <div className="flex justify-between text-ink/50 text-xs">
+                  <span>Cash Collected</span>
+                  <span>{order.cash_collected ? "Yes" : "Not yet"}</span>
+                </div>
+              )}
+              {order.delivery_rating != null && (
+                <div className="flex justify-between text-ink/50 text-xs">
+                  <span>Delivery Rating</span>
+                  <span>{"★".repeat(order.delivery_rating)}{order.delivery_notes ? ` — ${order.delivery_notes}` : ""}</span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -125,6 +146,8 @@ export default async function OwnerOrderDetailPage({ params }: { params: Promise
           paymentStatus={order.payment_status}
           assignedEmployeeId={order.assigned_employee_id}
           employees={employees ?? []}
+          assignedDeliveryId={order.assigned_delivery_id}
+          deliveryStaff={deliveryStaff ?? []}
           canAssign
         />
       </div>

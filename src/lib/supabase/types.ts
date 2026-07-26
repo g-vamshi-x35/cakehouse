@@ -2,7 +2,7 @@
 // Once the project is connected, regenerate with the Supabase CLI/MCP
 // (`generate_typescript_types`) and replace this file — the shape should match.
 
-export type UserRole = "customer" | "employee" | "owner";
+export type UserRole = "customer" | "employee" | "owner" | "delivery";
 export type OrderStatus =
   | "pending"
   | "confirmed"
@@ -33,6 +33,7 @@ export interface Database {
           phone: string | null;
           avatar_url: string | null;
           birthday: string | null;
+          is_online: boolean;
           created_at: string;
         },
         {
@@ -42,6 +43,7 @@ export interface Database {
           phone?: string | null;
           avatar_url?: string | null;
           birthday?: string | null;
+          is_online?: boolean;
         }
       >;
       categories: TableDef<
@@ -164,6 +166,14 @@ export interface Database {
           payment_status: PaymentStatus;
           order_status: OrderStatus;
           assigned_employee_id: string | null;
+          assigned_delivery_id: string | null;
+          delivery_charge: number;
+          delivery_distance_km: number | null;
+          delivery_lat: number | null;
+          delivery_lng: number | null;
+          delivery_rating: number | null;
+          delivery_notes: string | null;
+          cash_collected: boolean;
           notes: string | null;
           created_at: string;
           updated_at: string;
@@ -188,6 +198,14 @@ export interface Database {
           payment_status?: PaymentStatus;
           order_status?: OrderStatus;
           assigned_employee_id?: string | null;
+          assigned_delivery_id?: string | null;
+          delivery_charge?: number;
+          delivery_distance_km?: number | null;
+          delivery_lat?: number | null;
+          delivery_lng?: number | null;
+          delivery_rating?: number | null;
+          delivery_notes?: string | null;
+          cash_collected?: boolean;
           notes?: string | null;
           updated_at?: string;
         }

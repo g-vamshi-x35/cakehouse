@@ -3,6 +3,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { QUICK_ORDER_ADVANCE_AMOUNT } from "@/lib/orders/constants";
+import { geocodeAddress, distanceFromShopKm } from "@/lib/delivery/geocode";
+import { calculateDeliveryCharge } from "@/lib/delivery/pricing";
 
 export type QuickOrderInput = {
   productId: string;
@@ -20,7 +22,30 @@ export type QuickOrderInput = {
   eventTime?: string;
   paymentMethod: "razorpay" | "qr_manual";
   couponCode?: string;
+  deliveryCharge?: number;
+  deliveryDistanceKm?: number;
+  deliveryLat?: number;
+  deliveryLng?: number;
 };
+
+export type DeliveryChargeResult =
+  | { ok: true; charge: number; distanceKm: number; lat: number; lng: number }
+  | { ok: false };
+
+// Never blocks checkout — a failed lookup just means the UI falls back to
+// a flat default charge and asks the customer to confirm the exact fee on
+// WhatsApp, since this uses the free (best-effort) OpenStreetMap geocoder.
+export async function calculateDeliveryChargeAction(address: string): Promise<DeliveryChargeResult> {
+  if (!address.trim()) return { ok: false };
+
+  const location = await geocodeAddress(address.trim());
+  if (!location) return { ok: false };
+
+  const distanceKm = distanceFromShopKm(location.lat, location.lng);
+  const charge = calculateDeliveryCharge(distanceKm);
+
+  return { ok: true, charge, distanceKm, lat: location.lat, lng: location.lng };
+}
 
 export type PlaceOrderResult =
   | { ok: true; orderId: string; orderNumber: string; total: number; advanceAmount: number }
@@ -68,7 +93,8 @@ export async function placeQuickOrderAction(input: QuickOrderInput): Promise<Pla
     }
   }
 
-  const total = Math.max(0, subtotal - discount);
+  const deliveryCharge = Math.max(0, input.deliveryCharge ?? 0);
+  const total = Math.max(0, subtotal - discount) + deliveryCharge;
   // Can't take a bigger advance than the order is actually worth (matters for
   // low-priced snack items under the fixed advance amount).
   const advanceAmount = Math.min(QUICK_ORDER_ADVANCE_AMOUNT, total);
@@ -92,6 +118,10 @@ export async function placeQuickOrderAction(input: QuickOrderInput): Promise<Pla
       payment_method: input.paymentMethod,
       payment_status: "unpaid",
       order_status: "pending",
+      delivery_charge: deliveryCharge,
+      delivery_distance_km: input.deliveryDistanceKm ?? null,
+      delivery_lat: input.deliveryLat ?? null,
+      delivery_lng: input.deliveryLng ?? null,
     })
     .select("id, order_number")
     .single();

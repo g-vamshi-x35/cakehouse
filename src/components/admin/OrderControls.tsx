@@ -6,6 +6,7 @@ import {
   updateOrderStatusAction,
   confirmAdvancePaymentAction,
   assignEmployeeAction,
+  assignDeliveryAction,
 } from "@/lib/actions/admin";
 import type { OrderStatus } from "@/lib/supabase/types";
 import { ORDER_STATUS_STEPS, ORDER_STATUS_LABELS } from "@/components/account/OrderStatusBadge";
@@ -19,6 +20,8 @@ export default function OrderControls({
   paymentStatus,
   assignedEmployeeId,
   employees,
+  assignedDeliveryId,
+  deliveryStaff,
   canAssign,
 }: {
   orderId: string;
@@ -26,6 +29,8 @@ export default function OrderControls({
   paymentStatus: string;
   assignedEmployeeId: string | null;
   employees: Employee[];
+  assignedDeliveryId?: string | null;
+  deliveryStaff?: Employee[];
   canAssign: boolean;
 }) {
   const [pending, startTransition] = useTransition();
@@ -94,6 +99,24 @@ export default function OrderControls({
             {employees.map((emp) => (
               <option key={emp.id} value={emp.id}>
                 {emp.full_name || "Employee"}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {canAssign && deliveryStaff && (
+        <div>
+          <p className="text-xs font-semibold uppercase text-ink/50 mb-2">Assign Delivery</p>
+          <select
+            defaultValue={assignedDeliveryId ?? ""}
+            onChange={(e) => startTransition(() => assignDeliveryAction(orderId, e.target.value))}
+            className={inputClasses}
+          >
+            <option value="">Unassigned</option>
+            {deliveryStaff.map((emp) => (
+              <option key={emp.id} value={emp.id}>
+                {emp.full_name || "Delivery"}
               </option>
             ))}
           </select>

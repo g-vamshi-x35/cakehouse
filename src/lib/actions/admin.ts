@@ -212,6 +212,14 @@ export async function assignEmployeeAction(orderId: string, employeeId: string) 
   revalidatePath(`/dashboard/owner/orders/${orderId}`);
 }
 
+export async function assignDeliveryAction(orderId: string, deliveryId: string) {
+  const { supabase } = await requireOwnerClient();
+  await supabase.from("orders").update({ assigned_delivery_id: deliveryId || null }).eq("id", orderId);
+  revalidatePath("/dashboard/owner/orders");
+  revalidatePath(`/dashboard/owner/orders/${orderId}`);
+  revalidatePath("/dashboard/delivery");
+}
+
 // ---------- Coupons ----------
 
 export async function addCouponAction(
@@ -257,7 +265,7 @@ export async function inviteEmployeeAction(
   const fullName = String(formData.get("fullName") || "").trim();
   const phone = String(formData.get("phone") || "").trim();
   const password = String(formData.get("password") || "");
-  const role = String(formData.get("role") || "employee") as "employee" | "owner";
+  const role = String(formData.get("role") || "employee") as "employee" | "delivery" | "owner";
 
   if (!email || password.length < 6) {
     return { error: "Provide an email and a password of at least 6 characters." };

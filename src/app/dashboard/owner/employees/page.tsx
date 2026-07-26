@@ -7,7 +7,7 @@ export default async function EmployeesPage() {
   const { data: employees } = await supabase
     .from("profiles")
     .select("id, full_name, phone, role")
-    .in("role", ["employee", "owner"])
+    .in("role", ["employee", "delivery", "owner"])
     .order("created_at", { ascending: false });
 
   return (

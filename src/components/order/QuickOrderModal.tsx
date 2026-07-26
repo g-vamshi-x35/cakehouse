@@ -9,7 +9,11 @@ import { FaWhatsapp } from "react-icons/fa";
 import { SiRazorpay, SiPhonepe, SiGooglepay, SiPaytm } from "react-icons/si";
 import type { Product } from "@/data/products";
 import { useQuickOrder } from "./QuickOrderContext";
-import { placeQuickOrderAction, validateCouponAction } from "@/lib/actions/orders";
+import {
+  placeQuickOrderAction,
+  validateCouponAction,
+  calculateDeliveryChargeAction,
+} from "@/lib/actions/orders";
 import { QUICK_ORDER_ADVANCE_AMOUNT, MIN_LEAD_HOURS, MAX_LEAD_HOURS_NOTICE } from "@/lib/orders/constants";
 import PaymentQrCard from "@/components/checkout/PaymentQrCard";
 import { business } from "@/data/business";
@@ -103,6 +107,12 @@ function QuickOrderModalInner({
   const [couponMsg, setCouponMsg] = useState<{ type: "ok" | "error"; text: string } | null>(null);
   const [couponPending, setCouponPending] = useState(false);
 
+  const [delivery, setDelivery] = useState<{ charge: number; distanceKm: number; lat: number; lng: number } | null>(
+    null
+  );
+  const [deliveryStatus, setDeliveryStatus] = useState<"idle" | "loading" | "done" | "failed">("idle");
+  const [lastCheckedAddress, setLastCheckedAddress] = useState("");
+
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [qrPendingOrder, setQrPendingOrder] = useState<SuccessInfo | null>(null);
@@ -111,9 +121,26 @@ function QuickOrderModalInner({
   const isCustomWeight = weight === "Custom" || (selectedWeightOption && selectedWeightOption.price == null);
   const unitPrice = isCustomWeight ? null : selectedWeightOption?.price ?? product.price;
   const subtotal = unitPrice != null ? unitPrice * qty : null;
-  const total = subtotal != null ? Math.max(0, subtotal - discount) : null;
+  const deliveryCharge = delivery?.charge ?? 0;
+  const total = subtotal != null ? Math.max(0, subtotal - discount) + deliveryCharge : null;
   const advanceAmount = total != null ? Math.min(QUICK_ORDER_ADVANCE_AMOUNT, total) : null;
   const remaining = total != null && advanceAmount != null ? total - advanceAmount : null;
+
+  async function handleAddressBlur() {
+    const trimmed = address.trim();
+    if (!trimmed || trimmed === lastCheckedAddress) return;
+
+    setLastCheckedAddress(trimmed);
+    setDeliveryStatus("loading");
+    const result = await calculateDeliveryChargeAction(trimmed);
+    if (!result.ok) {
+      setDelivery(null);
+      setDeliveryStatus("failed");
+      return;
+    }
+    setDelivery({ charge: result.charge, distanceKm: result.distanceKm, lat: result.lat, lng: result.lng });
+    setDeliveryStatus("done");
+  }
 
   const isUnavailable = product.available === false;
   const missingSchedule = product.type === "cake" && (!eventDate || !eventTime);
@@ -177,6 +204,10 @@ function QuickOrderModalInner({
       eventTime: eventTime || undefined,
       paymentMethod,
       couponCode: couponCode || undefined,
+      deliveryCharge: deliveryCharge || undefined,
+      deliveryDistanceKm: delivery?.distanceKm,
+      deliveryLat: delivery?.lat,
+      deliveryLng: delivery?.lng,
     });
 
     if (!result.ok) {
@@ -412,13 +443,30 @@ function QuickOrderModalInner({
             type="tel"
             className={inputClasses}
           />
-          <textarea
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-            placeholder="Delivery Address"
-            rows={2}
-            className={`${inputClasses} resize-none`}
-          />
+          <div>
+            <textarea
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              onBlur={handleAddressBlur}
+              placeholder="Delivery Address"
+              rows={2}
+              className={`${inputClasses} resize-none`}
+            />
+            {deliveryStatus === "loading" && (
+              <p className="text-xs text-ink/50 mt-1">Calculating delivery charge…</p>
+            )}
+            {deliveryStatus === "failed" && (
+              <p className="text-xs text-brown/70 mt-1">
+                Couldn&apos;t auto-calculate delivery for this address — we&apos;ll confirm the exact charge
+                by phone/WhatsApp before delivery.
+              </p>
+            )}
+            {deliveryStatus === "done" && delivery && (
+              <p className="text-xs text-green-700 mt-1">
+                Delivery: ₹{delivery.charge} (~{delivery.distanceKm.toFixed(1)} km away)
+              </p>
+            )}
+          </div>
 
           {product.type === "cake" && (
             <div>
@@ -492,8 +540,19 @@ function QuickOrderModalInner({
           {!isCustomWeight && !isUnavailable && (
             <div className="bg-cream rounded-2xl p-4 space-y-1.5 text-sm">
               <div className="flex justify-between text-ink/70">
+                <span>Cake Price</span>
+                <span>₹{subtotal}</span>
+              </div>
+              <div className="flex justify-between text-ink/70">
+                <span>
+                  Delivery Charge
+                  {delivery && <span className="text-ink/40"> ({delivery.distanceKm.toFixed(1)} km)</span>}
+                </span>
+                <span>₹{deliveryCharge}</span>
+              </div>
+              <div className="flex justify-between font-semibold text-ink pt-1 border-t border-brown/15 mt-1">
                 <span>Total Amount</span>
-                <span className="font-semibold text-ink">₹{total}</span>
+                <span>₹{total}</span>
               </div>
               <div className="flex justify-between text-ink/70">
                 <span>Advance Payment</span>

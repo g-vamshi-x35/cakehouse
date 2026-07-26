@@ -4,6 +4,7 @@ import { NextResponse, type NextRequest } from "next/server";
 const CUSTOMER_PREFIX = "/account";
 const OWNER_PREFIX = "/dashboard/owner";
 const EMPLOYEE_PREFIX = "/dashboard/employee";
+const DELIVERY_PREFIX = "/dashboard/delivery";
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -15,7 +16,8 @@ export async function middleware(request: NextRequest) {
   const isProtected =
     pathname.startsWith(CUSTOMER_PREFIX) ||
     pathname.startsWith(OWNER_PREFIX) ||
-    pathname.startsWith(EMPLOYEE_PREFIX);
+    pathname.startsWith(EMPLOYEE_PREFIX) ||
+    pathname.startsWith(DELIVERY_PREFIX);
 
   if (!supabaseUrl || !supabaseAnonKey) {
     // Supabase isn't configured yet — don't hard-lock the whole site out.
@@ -59,7 +61,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
 
-  if (pathname.startsWith(OWNER_PREFIX) || pathname.startsWith(EMPLOYEE_PREFIX)) {
+  if (pathname.startsWith(OWNER_PREFIX) || pathname.startsWith(EMPLOYEE_PREFIX) || pathname.startsWith(DELIVERY_PREFIX)) {
     const { data: profile } = await supabase
       .from("profiles")
       .select("role")
@@ -71,6 +73,9 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL("/staff/login", request.url));
     }
     if (pathname.startsWith(EMPLOYEE_PREFIX) && role !== "employee" && role !== "owner") {
+      return NextResponse.redirect(new URL("/staff/login", request.url));
+    }
+    if (pathname.startsWith(DELIVERY_PREFIX) && role !== "delivery" && role !== "owner") {
       return NextResponse.redirect(new URL("/staff/login", request.url));
     }
   }
