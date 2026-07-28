@@ -126,20 +126,31 @@ function QuickOrderModalInner({
   const advanceAmount = total != null ? Math.min(QUICK_ORDER_ADVANCE_AMOUNT, total) : null;
   const remaining = total != null && advanceAmount != null ? total - advanceAmount : null;
 
-  async function handleAddressBlur() {
-    const trimmed = address.trim();
-    if (!trimmed || trimmed === lastCheckedAddress) return;
-
-    setLastCheckedAddress(trimmed);
+  // Shared by the address-field blur handler and the submit button — the
+  // blur is just an early head start so the charge is usually already
+  // showing by the time someone reaches the pay button; this function is
+  // what actually guarantees the charge is resolved before an order can be
+  // placed, regardless of whether blur fired (e.g. address filled via
+  // autofill, or the field never lost focus).
+  async function resolveDeliveryCharge(trimmedAddress: string) {
+    setLastCheckedAddress(trimmedAddress);
     setDeliveryStatus("loading");
-    const result = await calculateDeliveryChargeAction(trimmed);
+    const result = await calculateDeliveryChargeAction(trimmedAddress);
     if (!result.ok) {
       setDelivery(null);
       setDeliveryStatus("failed");
-      return;
+      return null;
     }
-    setDelivery({ charge: result.charge, distanceKm: result.distanceKm, lat: result.lat, lng: result.lng });
+    const resolved = { charge: result.charge, distanceKm: result.distanceKm, lat: result.lat, lng: result.lng };
+    setDelivery(resolved);
     setDeliveryStatus("done");
+    return resolved;
+  }
+
+  async function handleAddressBlur() {
+    const trimmed = address.trim();
+    if (!trimmed || trimmed === lastCheckedAddress) return;
+    await resolveDeliveryCharge(trimmed);
   }
 
   const isUnavailable = product.available === false;
@@ -186,6 +197,14 @@ function QuickOrderModalInner({
     setSubmitting(true);
     setSavedInfo({ name, phone, address, deliveryInstructions: instructions });
 
+    // Guarantee the charge reflects the current address even if blur never
+    // fired (autofill, or the field kept focus right up to submit).
+    const trimmedAddress = address.trim();
+    let currentDelivery = delivery;
+    if (trimmedAddress !== lastCheckedAddress || !currentDelivery) {
+      currentDelivery = await resolveDeliveryCharge(trimmedAddress);
+    }
+
     const paymentMethod: "razorpay" | "qr_manual" = RAZORPAY_KEY_ID ? "razorpay" : "qr_manual";
 
     const result = await placeQuickOrderAction({
@@ -204,10 +223,10 @@ function QuickOrderModalInner({
       eventTime: eventTime || undefined,
       paymentMethod,
       couponCode: couponCode || undefined,
-      deliveryCharge: deliveryCharge || undefined,
-      deliveryDistanceKm: delivery?.distanceKm,
-      deliveryLat: delivery?.lat,
-      deliveryLng: delivery?.lng,
+      deliveryCharge: currentDelivery?.charge || undefined,
+      deliveryDistanceKm: currentDelivery?.distanceKm,
+      deliveryLat: currentDelivery?.lat,
+      deliveryLng: currentDelivery?.lng,
     });
 
     if (!result.ok) {
@@ -463,7 +482,7 @@ function QuickOrderModalInner({
             )}
             {deliveryStatus === "done" && delivery && (
               <p className="text-xs text-green-700 mt-1">
-                Delivery: ₹{delivery.charge} (~{delivery.distanceKm.toFixed(1)} km away)
+                ~{delivery.distanceKm.toFixed(1)} km from our bakery — Delivery: ₹{delivery.charge}
               </p>
             )}
           </div>

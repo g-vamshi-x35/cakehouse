@@ -7,6 +7,13 @@ export const SHOP_LNG = 84.8712336;
 
 export type GeocodeResult = { lat: number; lng: number };
 
+// A same-named place can exist hundreds of km away in another state (e.g.
+// "Berhampur" in Odisha vs. "Baharampur/Berhampore" in West Bengal) — for a
+// local bakery's delivery area, restrict the search to a box roughly
+// ±1° (~110km) around the shop so a same-name mismatch can't be returned
+// at all, rather than trying to catch it after the fact.
+const SEARCH_RADIUS_DEG = 1;
+
 // Free OpenStreetMap geocoder — no API key/billing, but lower accuracy and
 // stricter rate limits than a paid provider. Never throws; callers should
 // treat null as "couldn't resolve this address" and fall back gracefully
@@ -17,6 +24,16 @@ export async function geocodeAddress(address: string): Promise<GeocodeResult | n
     url.searchParams.set("q", `${address}, Odisha, India`);
     url.searchParams.set("format", "json");
     url.searchParams.set("limit", "1");
+    url.searchParams.set(
+      "viewbox",
+      [
+        SHOP_LNG - SEARCH_RADIUS_DEG,
+        SHOP_LAT + SEARCH_RADIUS_DEG,
+        SHOP_LNG + SEARCH_RADIUS_DEG,
+        SHOP_LAT - SEARCH_RADIUS_DEG,
+      ].join(",")
+    );
+    url.searchParams.set("bounded", "1");
 
     const res = await fetch(url.toString(), {
       headers: {

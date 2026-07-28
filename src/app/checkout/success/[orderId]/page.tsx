@@ -28,6 +28,7 @@ type OrderRow = {
   advance_amount: number;
   delivery_address: string;
   delivery_charge: number;
+  delivery_distance_km: number | null;
   event_date: string | null;
   payment_status: PaymentStatus;
 };
@@ -69,7 +70,7 @@ export default async function OrderSuccessPage({ params, searchParams }: Props) 
       supabase
         .from("orders")
         .select(
-          "order_number, customer_name, customer_phone, total, advance_amount, delivery_address, delivery_charge, event_date, payment_status"
+          "order_number, customer_name, customer_phone, total, advance_amount, delivery_address, delivery_charge, delivery_distance_km, event_date, payment_status"
         )
         .eq("id", orderId)
         .maybeSingle(),
@@ -124,10 +125,18 @@ export default async function OrderSuccessPage({ params, searchParams }: Props) 
                 />
               )}
               {deliveryDate && <DetailRow label="Delivery Date" value={deliveryDate} />}
-              <DetailRow label="Delivery Address" value={order.delivery_address} />
+              <DetailRow label="From (Our Bakery)" value={business.address} />
+              <DetailRow label="To (Delivery Address)" value={order.delivery_address} />
               <DetailRow label="Phone Number" value={order.customer_phone} />
               {order.delivery_charge > 0 && (
-                <DetailRow label="Delivery Charge" value={`₹${order.delivery_charge}`} />
+                <DetailRow
+                  label="Delivery Charge"
+                  value={
+                    order.delivery_distance_km != null
+                      ? `₹${order.delivery_charge} (${order.delivery_distance_km.toFixed(1)} km)`
+                      : `₹${order.delivery_charge}`
+                  }
+                />
               )}
               <DetailRow label="Total Amount" value={`₹${order.total}`} />
               <DetailRow label="Advance Paid" value={`₹${order.advance_amount}`} />

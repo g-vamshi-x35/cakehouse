@@ -32,6 +32,12 @@ export type DeliveryChargeResult =
   | { ok: true; charge: number; distanceKm: number; lat: number; lng: number }
   | { ok: false };
 
+// A bakery serving this area realistically never delivers 100km+ — treat
+// anything past this as a bad geocode match rather than a real address,
+// even though the search is already boxed to the local region (defense in
+// depth, not just relying on the viewbox).
+const MAX_PLAUSIBLE_DELIVERY_KM = 100;
+
 // Never blocks checkout — a failed lookup just means the UI falls back to
 // a flat default charge and asks the customer to confirm the exact fee on
 // WhatsApp, since this uses the free (best-effort) OpenStreetMap geocoder.
@@ -42,6 +48,8 @@ export async function calculateDeliveryChargeAction(address: string): Promise<De
   if (!location) return { ok: false };
 
   const distanceKm = distanceFromShopKm(location.lat, location.lng);
+  if (distanceKm > MAX_PLAUSIBLE_DELIVERY_KM) return { ok: false };
+
   const charge = calculateDeliveryCharge(distanceKm);
 
   return { ok: true, charge, distanceKm, lat: location.lat, lng: location.lng };
