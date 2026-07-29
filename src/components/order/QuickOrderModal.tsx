@@ -347,7 +347,7 @@ function QuickOrderModalInner({
             onClick={handleQrConfirm}
             className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-rose text-white font-semibold py-3.5 hover:bg-brown transition-colors"
           >
-            <FiCheck /> I&apos;ve Paid — View Order
+            <FiCheck /> I&apos;ve Paid — Confirm My Order
           </button>
         </div>
       ) : (
