@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import type { OrderStatus } from "@/lib/supabase/types";
+import { ORDER_STATUS_LABELS } from "@/components/account/OrderStatusBadge";
 
 async function requireDeliveryClient() {
   const supabase = await createClient();
@@ -55,12 +56,41 @@ export async function updateDeliveryStatusAction(orderId: string, status: OrderS
   if (!DELIVERY_STATUSES.includes(status)) throw new Error("Invalid status for this dashboard");
   await assertAssignedToMe(supabase, orderId, user.id, isOwner);
 
-  await supabase
+  const { data: order } = await supabase
     .from("orders")
     .update({ order_status: status, updated_at: new Date().toISOString() })
-    .eq("id", orderId);
+    .eq("id", orderId)
+    .select("order_number, customer_id, customer_name")
+    .maybeSingle();
+
+  if (order?.customer_id) {
+    await supabase.from("notifications").insert({
+      user_id: order.customer_id,
+      title: `Order #${order.order_number}: ${ORDER_STATUS_LABELS[status]}`,
+      body: `Your order status has been updated to "${ORDER_STATUS_LABELS[status]}".`,
+      type: "order",
+    });
+  }
+
+  // The owner has no other way to know a delivery finished short of
+  // checking the orders list themselves — tell them directly.
+  if (status === "delivered" && order) {
+    const { data: owners } = await supabase.from("profiles").select("id").eq("role", "owner");
+    if (owners?.length) {
+      await supabase.from("notifications").insert(
+        owners.map((o) => ({
+          user_id: o.id,
+          title: `Order #${order.order_number} delivered`,
+          body: `Delivered to ${order.customer_name}.`,
+          type: "order",
+        }))
+      );
+    }
+  }
 
   revalidateDelivery(orderId);
+  revalidatePath("/dashboard/owner/orders");
+  revalidatePath("/dashboard/owner/notifications");
 }
 
 export async function markCashCollectedAction(orderId: string, collected: boolean) {

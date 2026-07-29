@@ -17,6 +17,7 @@ import {
   FiActivity,
   FiLogOut,
   FiEdit3,
+  FiBell,
 } from "react-icons/fi";
 import { requireRole } from "@/lib/auth/guards";
 import { signOutAction } from "@/lib/auth/actions";
@@ -34,6 +35,7 @@ const NAV = [
   { href: "/dashboard/owner/analytics", label: "Analytics", icon: FiBarChart2 },
   { href: "/dashboard/owner/payments", label: "Payments", icon: FiCreditCard },
   { href: "/dashboard/owner/messages", label: "Messages", icon: FiMail },
+  { href: "/dashboard/owner/notifications", label: "Notifications", icon: FiBell },
   { href: "/dashboard/owner/settings", label: "Settings", icon: FiSettings },
   { href: "/dashboard/owner/activity", label: "Activity Log", icon: FiActivity },
 ];

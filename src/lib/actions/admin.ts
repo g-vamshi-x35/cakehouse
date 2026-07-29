@@ -164,7 +164,7 @@ export async function updateOrderStatusAction(orderId: string, status: OrderStat
     .from("orders")
     .update({ order_status: status, updated_at: new Date().toISOString() })
     .eq("id", orderId)
-    .select("order_number, customer_id")
+    .select("order_number, customer_id, assigned_delivery_id")
     .maybeSingle();
 
   if (order?.customer_id) {
@@ -176,10 +176,24 @@ export async function updateOrderStatusAction(orderId: string, status: OrderStat
     });
   }
 
+  // Let the assigned delivery person know the moment it's ready to pick up
+  // — otherwise they'd have no way to know short of refreshing their
+  // dashboard themselves.
+  if (status === "ready" && order?.assigned_delivery_id) {
+    await supabase.from("notifications").insert({
+      user_id: order.assigned_delivery_id,
+      title: `Order #${order.order_number} is ready for pickup`,
+      body: "The kitchen has marked this order ready — head over when you can.",
+      type: "order",
+    });
+  }
+
   await logActivity(`Order status → ${status}`, "order", orderId);
   revalidatePath("/dashboard/owner/orders");
   revalidatePath("/dashboard/employee/orders");
   revalidatePath(`/dashboard/owner/orders/${orderId}`);
+  revalidatePath("/dashboard/delivery");
+  revalidatePath("/dashboard/delivery/notifications");
 }
 
 export async function confirmAdvancePaymentAction(orderId: string) {
@@ -214,10 +228,26 @@ export async function assignEmployeeAction(orderId: string, employeeId: string) 
 
 export async function assignDeliveryAction(orderId: string, deliveryId: string) {
   const { supabase } = await requireOwnerClient();
-  await supabase.from("orders").update({ assigned_delivery_id: deliveryId || null }).eq("id", orderId);
+  const { data: order } = await supabase
+    .from("orders")
+    .update({ assigned_delivery_id: deliveryId || null })
+    .eq("id", orderId)
+    .select("order_number, delivery_address")
+    .maybeSingle();
+
+  if (deliveryId && order) {
+    await supabase.from("notifications").insert({
+      user_id: deliveryId,
+      title: `New delivery assigned: Order #${order.order_number}`,
+      body: `Delivering to ${order.delivery_address}. Check your Today list for details.`,
+      type: "order",
+    });
+  }
+
   revalidatePath("/dashboard/owner/orders");
   revalidatePath(`/dashboard/owner/orders/${orderId}`);
   revalidatePath("/dashboard/delivery");
+  revalidatePath("/dashboard/delivery/notifications");
 }
 
 // ---------- Coupons ----------

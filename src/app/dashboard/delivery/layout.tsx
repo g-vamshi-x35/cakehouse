@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { FiGrid, FiShoppingBag, FiDollarSign, FiLogOut } from "react-icons/fi";
+import { FiGrid, FiShoppingBag, FiDollarSign, FiBell, FiLogOut } from "react-icons/fi";
 import { requireRole } from "@/lib/auth/guards";
 import { signOutAction } from "@/lib/auth/actions";
 
@@ -9,6 +9,7 @@ const NAV = [
   { href: "/dashboard/delivery", label: "Today", icon: FiGrid },
   { href: "/dashboard/delivery/orders", label: "Orders", icon: FiShoppingBag },
   { href: "/dashboard/delivery/cash", label: "Cash", icon: FiDollarSign },
+  { href: "/dashboard/delivery/notifications", label: "Notifications", icon: FiBell },
 ];
 
 export default async function DeliveryDashboardLayout({ children }: { children: ReactNode }) {

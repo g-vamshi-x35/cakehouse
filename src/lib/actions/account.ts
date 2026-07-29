@@ -92,5 +92,11 @@ export async function markNotificationReadAction(notificationId: string) {
     .update({ is_read: true })
     .eq("id", notificationId)
     .eq("user_id", user.id);
+  // Same table/action serves the customer, owner, employee and delivery
+  // notification pages — revalidate all of them rather than branching on
+  // which dashboard the click came from.
   revalidatePath("/account/notifications");
+  revalidatePath("/dashboard/owner/notifications");
+  revalidatePath("/dashboard/employee/notifications");
+  revalidatePath("/dashboard/delivery/notifications");
 }
