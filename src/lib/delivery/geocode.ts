@@ -7,21 +7,18 @@ export const SHOP_LNG = 84.8712336;
 
 export type GeocodeResult = { lat: number; lng: number };
 
-// A same-named place can exist hundreds of km away in another state (e.g.
-// "Berhampur" in Odisha vs. "Baharampur/Berhampore" in West Bengal) — for a
-// local bakery's delivery area, restrict the search to a box roughly
-// ±1° (~110km) around the shop so a same-name mismatch can't be returned
-// at all, rather than trying to catch it after the fact.
+// A same-named place can exist far away in another district/state (e.g.
+// "Berhampur" has matches in Ganjam, Baleshwar, and West Bengal) — bias
+// results toward a box roughly ±1° (~110km) around the shop so the local
+// match wins. This is a *preference*, not a hard filter (Nominatim's
+// `bounded=1` was tried and rejected — it dropped valid local matches
+// entirely rather than just deprioritizing far ones; see geocodeAddress).
 const SEARCH_RADIUS_DEG = 1;
 
-// Free OpenStreetMap geocoder — no API key/billing, but lower accuracy and
-// stricter rate limits than a paid provider. Never throws; callers should
-// treat null as "couldn't resolve this address" and fall back gracefully
-// rather than blocking checkout.
-export async function geocodeAddress(address: string): Promise<GeocodeResult | null> {
+async function geocodeQuery(query: string): Promise<GeocodeResult | null> {
   try {
     const url = new URL("https://nominatim.openstreetmap.org/search");
-    url.searchParams.set("q", `${address}, Odisha, India`);
+    url.searchParams.set("q", query);
     url.searchParams.set("format", "json");
     url.searchParams.set("limit", "1");
     url.searchParams.set(
@@ -33,7 +30,6 @@ export async function geocodeAddress(address: string): Promise<GeocodeResult | n
         SHOP_LAT - SEARCH_RADIUS_DEG,
       ].join(",")
     );
-    url.searchParams.set("bounded", "1");
 
     const res = await fetch(url.toString(), {
       headers: {
@@ -54,6 +50,30 @@ export async function geocodeAddress(address: string): Promise<GeocodeResult | n
   } catch {
     return null;
   }
+}
+
+// Free OpenStreetMap geocoder — no API key/billing, but lower accuracy and
+// stricter rate limits than a paid provider. Never throws; callers should
+// treat null as "couldn't resolve this address" and fall back gracefully
+// rather than blocking checkout.
+export async function geocodeAddress(address: string): Promise<GeocodeResult | null> {
+  const direct = await geocodeQuery(`${address}, Odisha, India`);
+  if (direct) return direct;
+
+  // Verbose Indian addresses often chain several locality names that don't
+  // match Nominatim's indexed hierarchy as one combined string (e.g.
+  // "Golabandha, Gopalpur, Berhampur, Odisha" matches nothing, even though
+  // "Golabandha" and "Berhampur" each match fine alone) — retry with just
+  // the last couple of segments, which usually resolves at the town level
+  // even when the full street-level address doesn't.
+  const parts = address
+    .split(",")
+    .map((p) => p.trim())
+    .filter(Boolean);
+  if (parts.length > 2) {
+    return geocodeQuery(`${parts.slice(-2).join(", ")}, Odisha, India`);
+  }
+  return null;
 }
 
 export function haversineDistanceKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
