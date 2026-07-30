@@ -380,7 +380,7 @@ export async function quoteCustomCakeAction(
   _prevState: ActionState,
   formData: FormData
 ): Promise<ActionState> {
-  const { supabase } = await requireOwnerClient();
+  const { supabase } = await requireStaffClient();
   const requestId = String(formData.get("requestId") || "");
   const quotedPrice = Number(formData.get("quotedPrice")) || 0;
   const ownerNotes = String(formData.get("ownerNotes") || "").trim();
@@ -393,11 +393,13 @@ export async function quoteCustomCakeAction(
     .eq("id", requestId);
   if (error) return { error: error.message };
   revalidatePath("/dashboard/owner/custom-cakes");
+  revalidatePath("/dashboard/employee/custom-cakes");
   return { success: true };
 }
 
 export async function updateCustomCakeStatusAction(requestId: string, status: "approved" | "rejected") {
-  const { supabase } = await requireOwnerClient();
+  const { supabase } = await requireStaffClient();
   await supabase.from("custom_cake_requests").update({ status }).eq("id", requestId);
   revalidatePath("/dashboard/owner/custom-cakes");
+  revalidatePath("/dashboard/employee/custom-cakes");
 }

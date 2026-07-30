@@ -2,8 +2,11 @@
 
 import { useActionState, useTransition } from "react";
 import Image from "next/image";
+import { FaWhatsapp } from "react-icons/fa";
 import { quoteCustomCakeAction, updateCustomCakeStatusAction, type ActionState } from "@/lib/actions/admin";
 import { inputClasses } from "@/components/admin/AdminUI";
+import { buildWhatsAppLinkToNumber } from "@/lib/whatsapp";
+import { business } from "@/data/business";
 
 type Request = {
   id: string;
@@ -20,8 +23,23 @@ type Request = {
   event_date: string | null;
   status: string;
   quoted_price: number | null;
+  owner_notes?: string | null;
   created_at: string;
 };
+
+function customerUpdateMessage(request: Request): string | null {
+  if (request.status === "quoted" && request.quoted_price) {
+    const notes = request.owner_notes ? ` ${request.owner_notes}` : "";
+    return `Hi ${request.customer_name}! This is ${business.name} — your custom cake request is quoted at ₹${request.quoted_price}.${notes} Reply here to confirm and we'll get started!`;
+  }
+  if (request.status === "approved") {
+    return `Hi ${request.customer_name}! Good news — your custom cake request has been approved and we're getting started on it. We'll be in touch with any updates.`;
+  }
+  if (request.status === "rejected") {
+    return `Hi ${request.customer_name}, thanks for your custom cake request. Unfortunately we're not able to take this one on right now — message us here if you'd like to discuss other options.`;
+  }
+  return null;
+}
 
 export default function CustomCakeRequestCard({ request }: { request: Request }) {
   const [state, formAction, pending] = useActionState<ActionState, FormData>(
@@ -97,6 +115,16 @@ export default function CustomCakeRequestCard({ request }: { request: Request })
               Reject
             </button>
           </div>
+        )}
+        {customerUpdateMessage(request) && (
+          <a
+            href={buildWhatsAppLinkToNumber(request.customer_phone, customerUpdateMessage(request)!)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-2 flex items-center justify-center gap-1.5 w-full text-xs font-semibold rounded-full border border-green-600 text-green-700 py-1.5 hover:bg-green-50 transition-colors"
+          >
+            <FaWhatsapp size={13} /> Message Customer on WhatsApp
+          </a>
         )}
       </div>
     </div>
