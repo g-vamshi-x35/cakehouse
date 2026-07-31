@@ -7,6 +7,8 @@ export const SHOP_LNG = 84.8712336;
 
 export type GeocodeResult = { lat: number; lng: number };
 
+const NOMINATIM_USER_AGENT = "CakeHouseWebsite/1.0 (contact: jagadishrock529@gmail.com)";
+
 // A same-named place can exist far away in another district/state (e.g.
 // "Berhampur" has matches in Ganjam, Baleshwar, and West Bengal) — bias
 // results toward a box roughly ±1° (~110km) around the shop so the local
@@ -34,7 +36,7 @@ async function geocodeQuery(query: string): Promise<GeocodeResult | null> {
     const res = await fetch(url.toString(), {
       headers: {
         // Required by Nominatim's usage policy — identifies the app/contact.
-        "User-Agent": "CakeHouseWebsite/1.0 (contact: jagadishrock529@gmail.com)",
+        "User-Agent": NOMINATIM_USER_AGENT,
       },
     });
     if (!res.ok) return null;
@@ -74,6 +76,31 @@ export async function geocodeAddress(address: string): Promise<GeocodeResult | n
     return geocodeQuery(`${parts.slice(-2).join(", ")}, Odisha, India`);
   }
   return null;
+}
+
+// Turns a device's exact GPS coordinates into a readable address — used
+// after "Use My Current Location", which sidesteps the forward-geocoding
+// reliability issues above entirely (no address text to mis-parse, no
+// same-named-place ambiguity). The address text here is only to prefill
+// the field for the customer/kitchen to read; the charge itself is
+// computed straight from the coordinates, not from this string.
+export async function reverseGeocode(lat: number, lng: number): Promise<string | null> {
+  try {
+    const url = new URL("https://nominatim.openstreetmap.org/reverse");
+    url.searchParams.set("lat", String(lat));
+    url.searchParams.set("lon", String(lng));
+    url.searchParams.set("format", "json");
+
+    const res = await fetch(url.toString(), {
+      headers: { "User-Agent": NOMINATIM_USER_AGENT },
+    });
+    if (!res.ok) return null;
+
+    const data = (await res.json()) as { display_name?: string };
+    return data.display_name ?? null;
+  } catch {
+    return null;
+  }
 }
 
 export function haversineDistanceKm(lat1: number, lng1: number, lat2: number, lng2: number): number {

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import toast from "react-hot-toast";
-import { FiMinus, FiPlus, FiClock, FiX, FiTag, FiCheck, FiCheckCircle } from "react-icons/fi";
+import { FiMinus, FiPlus, FiClock, FiX, FiTag, FiCheck, FiCheckCircle, FiMapPin } from "react-icons/fi";
 import { FaWhatsapp } from "react-icons/fa";
 import { SiRazorpay, SiPhonepe, SiGooglepay, SiPaytm } from "react-icons/si";
 import type { Product } from "@/data/products";
@@ -13,6 +13,7 @@ import {
   placeQuickOrderAction,
   validateCouponAction,
   calculateDeliveryChargeAction,
+  calculateDeliveryChargeFromCoordsAction,
 } from "@/lib/actions/orders";
 import { QUICK_ORDER_ADVANCE_AMOUNT, MIN_LEAD_HOURS, MAX_LEAD_HOURS_NOTICE } from "@/lib/orders/constants";
 import PaymentQrCard from "@/components/checkout/PaymentQrCard";
@@ -107,11 +108,15 @@ function QuickOrderModalInner({
   const [couponMsg, setCouponMsg] = useState<{ type: "ok" | "error"; text: string } | null>(null);
   const [couponPending, setCouponPending] = useState(false);
 
-  const [delivery, setDelivery] = useState<{ charge: number; distanceKm: number; lat: number; lng: number } | null>(
-    null
-  );
+  const [delivery, setDelivery] = useState<{
+    charge: number;
+    distanceKm: number | null;
+    lat: number | null;
+    lng: number | null;
+  } | null>(null);
   const [deliveryStatus, setDeliveryStatus] = useState<"idle" | "loading" | "done" | "failed">("idle");
   const [lastCheckedAddress, setLastCheckedAddress] = useState("");
+  const [locating, setLocating] = useState(false);
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -151,6 +156,44 @@ function QuickOrderModalInner({
     const trimmed = address.trim();
     if (!trimmed || trimmed === lastCheckedAddress) return;
     await resolveDeliveryCharge(trimmed);
+  }
+
+  // The free text geocoder has repeatedly mismatched or failed on typed
+  // addresses (wrong same-named towns, unparsed verbose locality chains).
+  // The device's own GPS location sidesteps that entirely — no address
+  // text to misread, so it's the most reliable way to "verify" the
+  // delivery location and charge.
+  function handleUseMyLocation() {
+    if (!navigator.geolocation) {
+      toast.error("Location isn't available on this device or browser.");
+      return;
+    }
+    setLocating(true);
+    setDeliveryStatus("loading");
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const { latitude, longitude } = pos.coords;
+        const result = await calculateDeliveryChargeFromCoordsAction(latitude, longitude);
+        setLocating(false);
+        if (!result.ok) {
+          setDelivery(null);
+          setDeliveryStatus("failed");
+          toast.error("Couldn't verify a delivery charge for your location — please type your address instead.");
+          return;
+        }
+        if (result.address) setAddress(result.address);
+        setLastCheckedAddress(result.address ?? address.trim());
+        setDelivery({ charge: result.charge, distanceKm: result.distanceKm, lat: result.lat, lng: result.lng });
+        setDeliveryStatus("done");
+        toast.success("Location detected — delivery charge updated.");
+      },
+      () => {
+        setLocating(false);
+        setDeliveryStatus("failed");
+        toast.error("Couldn't get your location. Please allow location access, or type your address.");
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
   }
 
   const isUnavailable = product.available === false;
@@ -224,9 +267,9 @@ function QuickOrderModalInner({
       paymentMethod,
       couponCode: couponCode || undefined,
       deliveryCharge: currentDelivery?.charge || undefined,
-      deliveryDistanceKm: currentDelivery?.distanceKm,
-      deliveryLat: currentDelivery?.lat,
-      deliveryLng: currentDelivery?.lng,
+      deliveryDistanceKm: currentDelivery?.distanceKm ?? undefined,
+      deliveryLat: currentDelivery?.lat ?? undefined,
+      deliveryLng: currentDelivery?.lng ?? undefined,
     });
 
     if (!result.ok) {
@@ -471,6 +514,14 @@ function QuickOrderModalInner({
               rows={2}
               className={`${inputClasses} resize-none`}
             />
+            <button
+              type="button"
+              onClick={handleUseMyLocation}
+              disabled={locating}
+              className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-rose hover:text-brown transition-colors disabled:opacity-50"
+            >
+              <FiMapPin size={12} /> {locating ? "Detecting location…" : "Use My Current Location"}
+            </button>
             {deliveryStatus === "loading" && (
               <p className="text-xs text-ink/50 mt-1">Calculating delivery charge…</p>
             )}
@@ -482,7 +533,9 @@ function QuickOrderModalInner({
             )}
             {deliveryStatus === "done" && delivery && (
               <p className="text-xs text-green-700 mt-1">
-                ~{delivery.distanceKm.toFixed(1)} km from our bakery — Delivery: ₹{delivery.charge}
+                {delivery.distanceKm != null
+                  ? `~${delivery.distanceKm.toFixed(1)} km from our bakery — Delivery: ₹${delivery.charge}`
+                  : `Delivery: ₹${delivery.charge}`}
               </p>
             )}
           </div>
@@ -565,7 +618,9 @@ function QuickOrderModalInner({
               <div className="flex justify-between text-ink/70">
                 <span>
                   Delivery Charge
-                  {delivery && <span className="text-ink/40"> ({delivery.distanceKm.toFixed(1)} km)</span>}
+                  {delivery?.distanceKm != null && (
+                    <span className="text-ink/40"> ({delivery.distanceKm.toFixed(1)} km)</span>
+                  )}
                 </span>
                 <span>₹{deliveryCharge}</span>
               </div>

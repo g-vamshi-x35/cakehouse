@@ -3,8 +3,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { QUICK_ORDER_ADVANCE_AMOUNT } from "@/lib/orders/constants";
-import { geocodeAddress, distanceFromShopKm } from "@/lib/delivery/geocode";
-import { calculateDeliveryCharge } from "@/lib/delivery/pricing";
+import { geocodeAddress, reverseGeocode, distanceFromShopKm } from "@/lib/delivery/geocode";
+import { calculateDeliveryCharge, FLAT_RATE_ACTIVE, FLAT_RATE } from "@/lib/delivery/pricing";
 
 export type QuickOrderInput = {
   productId: string;
@@ -29,7 +29,7 @@ export type QuickOrderInput = {
 };
 
 export type DeliveryChargeResult =
-  | { ok: true; charge: number; distanceKm: number; lat: number; lng: number }
+  | { ok: true; charge: number; distanceKm: number | null; lat: number | null; lng: number | null }
   | { ok: false };
 
 // A bakery serving this area realistically never delivers 100km+ — treat
@@ -38,6 +38,18 @@ export type DeliveryChargeResult =
 // depth, not just relying on the viewbox).
 const MAX_PLAUSIBLE_DELIVERY_KM = 100;
 
+// While the flat rate is active, the charge doesn't depend on distance at
+// all — so a geocoding failure shouldn't block it from being charged.
+// (This is what caused the flat rate to still show ₹0 for addresses the
+// free geocoder couldn't parse: the old code returned ok:false whenever
+// geocoding failed, regardless of whether the charge even needed the
+// distance.) Falls back to the old distance-required behavior once the
+// flat rate is switched off.
+function flatRateFallback(): DeliveryChargeResult {
+  if (!FLAT_RATE_ACTIVE) return { ok: false };
+  return { ok: true, charge: FLAT_RATE, distanceKm: null, lat: null, lng: null };
+}
+
 // Never blocks checkout — a failed lookup just means the UI falls back to
 // a flat default charge and asks the customer to confirm the exact fee on
 // WhatsApp, since this uses the free (best-effort) OpenStreetMap geocoder.
@@ -45,14 +57,38 @@ export async function calculateDeliveryChargeAction(address: string): Promise<De
   if (!address.trim()) return { ok: false };
 
   const location = await geocodeAddress(address.trim());
-  if (!location) return { ok: false };
+  if (!location) return flatRateFallback();
 
   const distanceKm = distanceFromShopKm(location.lat, location.lng);
-  if (distanceKm > MAX_PLAUSIBLE_DELIVERY_KM) return { ok: false };
+  if (distanceKm > MAX_PLAUSIBLE_DELIVERY_KM) return flatRateFallback();
 
   const charge = calculateDeliveryCharge(distanceKm);
 
   return { ok: true, charge, distanceKm, lat: location.lat, lng: location.lng };
+}
+
+export type DeliveryChargeFromCoordsResult =
+  | { ok: true; charge: number; distanceKm: number; lat: number; lng: number; address: string | null }
+  | { ok: false };
+
+// Used by "Use My Current Location" — the device's own GPS coordinates are
+// far more reliable than trying to parse a typed address through a free
+// text geocoder, since there's no ambiguity to resolve at all. Reverse
+// geocodes only to prefill a readable address for the order/kitchen; the
+// charge itself comes straight from the coordinates.
+export async function calculateDeliveryChargeFromCoordsAction(
+  lat: number,
+  lng: number
+): Promise<DeliveryChargeFromCoordsResult> {
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return { ok: false };
+
+  const distanceKm = distanceFromShopKm(lat, lng);
+  if (distanceKm > MAX_PLAUSIBLE_DELIVERY_KM) return { ok: false };
+
+  const charge = calculateDeliveryCharge(distanceKm);
+  const address = await reverseGeocode(lat, lng);
+
+  return { ok: true, charge, distanceKm, lat, lng, address };
 }
 
 export type PlaceOrderResult =

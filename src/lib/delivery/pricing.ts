@@ -13,8 +13,11 @@ const BEYOND_10KM_PER_KM = 10;
 
 // Owner asked for a flat Rs.30 delivery charge for now, regardless of
 // distance — set to false to go back to the tiered rate card above.
-const FLAT_RATE_ACTIVE = true;
-const FLAT_RATE = 30;
+// Exported so callers (e.g. calculateDeliveryChargeAction) can charge the
+// flat rate even when geocoding fails, since the charge no longer depends
+// on knowing the distance at all while this is active.
+export const FLAT_RATE_ACTIVE = true;
+export const FLAT_RATE = 30;
 
 export function calculateDeliveryCharge(distanceKm: number): number {
   if (FLAT_RATE_ACTIVE) return FLAT_RATE;
