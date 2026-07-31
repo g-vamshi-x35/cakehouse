@@ -387,19 +387,56 @@ export async function quoteCustomCakeAction(
 
   if (!quotedPrice) return { error: "Please enter a quoted price." };
 
-  const { error } = await supabase
+  const { data: request, error } = await supabase
     .from("custom_cake_requests")
     .update({ quoted_price: quotedPrice, owner_notes: ownerNotes, status: "quoted" })
-    .eq("id", requestId);
+    .eq("id", requestId)
+    .select("customer_id")
+    .single();
   if (error) return { error: error.message };
+
+  // Only logged-in customers have an account to notify in-app — guest
+  // requests still get the details via the staff-side WhatsApp button.
+  if (request?.customer_id) {
+    await supabase.from("notifications").insert({
+      user_id: request.customer_id,
+      title: "Your custom cake request has a quote",
+      body: `Quoted price: ₹${quotedPrice}.${ownerNotes ? ` ${ownerNotes}` : ""} Reply on WhatsApp to confirm and we'll get started.`,
+      type: "custom_cake",
+    });
+  }
+
   revalidatePath("/dashboard/owner/custom-cakes");
   revalidatePath("/dashboard/employee/custom-cakes");
+  revalidatePath("/account/notifications");
   return { success: true };
 }
 
 export async function updateCustomCakeStatusAction(requestId: string, status: "approved" | "rejected") {
   const { supabase } = await requireStaffClient();
-  await supabase.from("custom_cake_requests").update({ status }).eq("id", requestId);
+  const { data: request } = await supabase
+    .from("custom_cake_requests")
+    .update({ status })
+    .eq("id", requestId)
+    .select("customer_id, quoted_price, owner_notes")
+    .single();
+
+  if (request?.customer_id) {
+    const body =
+      status === "approved"
+        ? `Your custom cake request has been approved!${request.quoted_price ? ` Price: ₹${request.quoted_price}.` : ""}${
+            request.owner_notes ? ` ${request.owner_notes}` : ""
+          } We'll get started on it.`
+        : "We're not able to take on this request right now. Message us on WhatsApp if you'd like to discuss other options.";
+    await supabase.from("notifications").insert({
+      user_id: request.customer_id,
+      title: status === "approved" ? "Custom cake request approved" : "Custom cake request update",
+      body,
+      type: "custom_cake",
+    });
+  }
+
   revalidatePath("/dashboard/owner/custom-cakes");
   revalidatePath("/dashboard/employee/custom-cakes");
+  revalidatePath("/account/notifications");
 }
