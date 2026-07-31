@@ -23,6 +23,7 @@ export default function OrderControls({
   assignedDeliveryId,
   deliveryStaff,
   canAssign,
+  canAssignDelivery,
 }: {
   orderId: string;
   currentStatus: OrderStatus;
@@ -32,6 +33,7 @@ export default function OrderControls({
   assignedDeliveryId?: string | null;
   deliveryStaff?: Employee[];
   canAssign: boolean;
+  canAssignDelivery?: boolean;
 }) {
   const [pending, startTransition] = useTransition();
 
@@ -105,7 +107,7 @@ export default function OrderControls({
         </div>
       )}
 
-      {canAssign && deliveryStaff && (
+      {(canAssignDelivery ?? canAssign) && deliveryStaff && (
         <div>
           <p className="text-xs font-semibold uppercase text-ink/50 mb-2">Assign Delivery</p>
           <select

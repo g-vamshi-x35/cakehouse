@@ -227,7 +227,7 @@ export async function assignEmployeeAction(orderId: string, employeeId: string) 
 }
 
 export async function assignDeliveryAction(orderId: string, deliveryId: string) {
-  const { supabase } = await requireOwnerClient();
+  const { supabase } = await requireStaffClient();
   const { data: order } = await supabase
     .from("orders")
     .update({ assigned_delivery_id: deliveryId || null })
@@ -246,6 +246,8 @@ export async function assignDeliveryAction(orderId: string, deliveryId: string) 
 
   revalidatePath("/dashboard/owner/orders");
   revalidatePath(`/dashboard/owner/orders/${orderId}`);
+  revalidatePath("/dashboard/employee/orders");
+  revalidatePath(`/dashboard/employee/orders/${orderId}`);
   revalidatePath("/dashboard/delivery");
   revalidatePath("/dashboard/delivery/notifications");
 }

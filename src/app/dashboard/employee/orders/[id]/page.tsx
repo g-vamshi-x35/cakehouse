@@ -10,12 +10,13 @@ export default async function EmployeeOrderDetailPage({ params }: { params: Prom
   const { id } = await params;
   const supabase = await createClient();
 
-  const [{ data: order }, { data: items }] = await Promise.all([
+  const [{ data: order }, { data: items }, { data: deliveryStaff }] = await Promise.all([
     supabase.from("orders").select("*").eq("id", id).maybeSingle(),
     supabase
       .from("order_items")
       .select("product_name, weight_label, flavour, custom_message, quantity, unit_price, line_total")
       .eq("order_id", id),
+    supabase.from("profiles").select("id, full_name").eq("role", "delivery"),
   ]);
 
   if (!order) notFound();
@@ -97,7 +98,10 @@ export default async function EmployeeOrderDetailPage({ params }: { params: Prom
           paymentStatus={order.payment_status}
           assignedEmployeeId={order.assigned_employee_id}
           employees={[]}
+          assignedDeliveryId={order.assigned_delivery_id}
+          deliveryStaff={deliveryStaff ?? []}
           canAssign={false}
+          canAssignDelivery
         />
       </div>
     </div>
