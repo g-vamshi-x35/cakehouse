@@ -5,6 +5,7 @@ import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { QUICK_ORDER_ADVANCE_AMOUNT } from "@/lib/orders/constants";
 import { geocodeAddress, reverseGeocode, distanceFromShopKm } from "@/lib/delivery/geocode";
 import { calculateDeliveryCharge, FLAT_RATE_ACTIVE, FLAT_RATE } from "@/lib/delivery/pricing";
+import { matchVillageCharge } from "@/lib/delivery/villages";
 
 export type QuickOrderInput = {
   productId: string;
@@ -56,6 +57,14 @@ function flatRateFallback(): DeliveryChargeResult {
 export async function calculateDeliveryChargeAction(address: string): Promise<DeliveryChargeResult> {
   if (!address.trim()) return { ok: false };
 
+  // A known local village always wins — it's a fixed price the owner set
+  // directly, and skips the free geocoder (and its history of mismatches)
+  // entirely for the addresses we deliver to most.
+  const villageMatch = matchVillageCharge(address);
+  if (villageMatch) {
+    return { ok: true, charge: villageMatch.charge, distanceKm: null, lat: null, lng: null };
+  }
+
   const location = await geocodeAddress(address.trim());
   if (!location) return flatRateFallback();
 
@@ -85,8 +94,9 @@ export async function calculateDeliveryChargeFromCoordsAction(
   const distanceKm = distanceFromShopKm(lat, lng);
   if (distanceKm > MAX_PLAUSIBLE_DELIVERY_KM) return { ok: false };
 
-  const charge = calculateDeliveryCharge(distanceKm);
   const address = await reverseGeocode(lat, lng);
+  const villageMatch = address ? matchVillageCharge(address) : null;
+  const charge = villageMatch ? villageMatch.charge : calculateDeliveryCharge(distanceKm);
 
   return { ok: true, charge, distanceKm, lat, lng, address };
 }
