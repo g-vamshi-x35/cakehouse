@@ -39,6 +39,24 @@ npm run dev
 
 Open http://localhost:3000.
 
+### Full stack on your own machine (no cloud project needed)
+
+With Docker Desktop running, you can run the whole backend (database, login,
+storage) locally. All migrations in `supabase/migrations/` are applied automatically:
+
+```bash
+npx supabase start
+```
+
+It prints an `API URL`, `ANON_KEY` and `SERVICE_ROLE_KEY`. Put them in `.env.local`
+as `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` and
+`SUPABASE_SERVICE_ROLE_KEY`, then `npm run dev`. Sign up on the site, then make
+yourself owner in Supabase Studio (http://localhost:54323) by setting your row's
+`role` in the `profiles` table to `owner`. Stop it with `npx supabase stop`.
+
+`SUPABASE_SERVICE_ROLE_KEY` is **required** for ordering and payments: orders are
+written by the server only, after it checks prices and payments.
+
 ## 3. Host locally (production build)
 
 ```bash

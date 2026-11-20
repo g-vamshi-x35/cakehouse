@@ -6,7 +6,7 @@ import PageHero from "@/components/ui/PageHero";
 import Button from "@/components/ui/Button";
 import PaymentQrCard from "@/components/checkout/PaymentQrCard";
 import OrderCelebration from "@/components/checkout/OrderCelebration";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient, isAdminClientConfigured } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { business } from "@/data/business";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
@@ -57,6 +57,8 @@ function formatDate(value: string | null): string | null {
   }
 }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export default async function OrderSuccessPage({ params, searchParams }: Props) {
   const { orderId } = await params;
   const { method, amount } = await searchParams;
@@ -64,8 +66,11 @@ export default async function OrderSuccessPage({ params, searchParams }: Props) 
   let order: OrderRow | null = null;
   let orderItems: OrderItemRow[] = [];
 
-  if (isSupabaseConfigured()) {
-    const supabase = await createClient();
+  // Guest orders aren't readable through the public API any more (they used
+  // to leak every guest's phone/address), so read this one server-side. The
+  // order's random UUID in the URL is what grants access to it.
+  if (isSupabaseConfigured() && isAdminClientConfigured() && UUID_RE.test(orderId)) {
+    const supabase = createAdminClient();
     const [{ data: orderData }, { data: itemsData }] = await Promise.all([
       supabase
         .from("orders")

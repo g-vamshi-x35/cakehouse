@@ -1,6 +1,8 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient, isAdminClientConfigured } from "@/lib/supabase/admin";
+import { getProductById } from "@/lib/data/products";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { QUICK_ORDER_ADVANCE_AMOUNT } from "@/lib/orders/constants";
 import { geocodeAddress, reverseGeocode, distanceFromShopKm } from "@/lib/delivery/geocode";
@@ -105,14 +107,35 @@ export type PlaceOrderResult =
   | { ok: true; orderId: string; orderNumber: string; total: number; advanceAmount: number }
   | { ok: false; error: string };
 
+// The delivery charge shown in the browser is only a preview: recompute it
+// here from the submitted address/coordinates so it can't be edited down.
+// Mirrors calculateDeliveryChargeAction / ...FromCoordsAction, but skips the
+// slow geocoder whenever the answer doesn't depend on it.
+async function resolveDeliveryCharge(input: QuickOrderInput): Promise<number> {
+  const village = matchVillageCharge(input.address);
+  if (village) return village.charge;
+  if (FLAT_RATE_ACTIVE) return FLAT_RATE;
+
+  if (Number.isFinite(input.deliveryLat) && Number.isFinite(input.deliveryLng)) {
+    const km = distanceFromShopKm(input.deliveryLat!, input.deliveryLng!);
+    if (km <= MAX_PLAUSIBLE_DELIVERY_KM) return calculateDeliveryCharge(km);
+  }
+  const result = await calculateDeliveryChargeAction(input.address);
+  if (result.ok) return result.charge;
+  // Address couldn't be priced: the UI already tells the customer the fee
+  // will be confirmed on WhatsApp. Never accept less than the client's own
+  // preview, and never a negative value.
+  return Math.max(0, Math.round(input.deliveryCharge ?? 0));
+}
+
+const MAX_QTY = 50;
+
 export async function placeQuickOrderAction(input: QuickOrderInput): Promise<PlaceOrderResult> {
   if (!input.customerName.trim() || !input.phone.trim() || !input.address.trim()) {
     return { ok: false, error: "Please fill in your name, phone number and delivery address." };
   }
 
-  const subtotal = input.unitPrice * input.qty;
-
-  if (!isSupabaseConfigured()) {
+  if (!isSupabaseConfigured() || !isAdminClientConfigured()) {
     return {
       ok: false,
       error:
@@ -120,15 +143,48 @@ export async function placeQuickOrderAction(input: QuickOrderInput): Promise<Pla
     };
   }
 
+  const qty = Math.floor(Number(input.qty));
+  if (!Number.isFinite(qty) || qty < 1 || qty > MAX_QTY) {
+    return { ok: false, error: `Quantity must be between 1 and ${MAX_QTY}.` };
+  }
+
+  // Price always comes from the database — never from the browser, where it
+  // could be edited to anything.
+  const product = await getProductById(input.productId);
+  if (!product) return { ok: false, error: "This item is no longer available." };
+  if (product.available === false) {
+    return { ok: false, error: "This item is currently unavailable." };
+  }
+
+  let unitPrice: number;
+  if (product.weightOptions?.length) {
+    const option = product.weightOptions.find((w) => w.label === input.weightLabel);
+    if (!option || option.price == null) {
+      return { ok: false, error: "Please choose a valid size for this item." };
+    }
+    unitPrice = Number(option.price);
+  } else {
+    unitPrice = Number(product.price);
+  }
+  if (!Number.isFinite(unitPrice) || unitPrice <= 0) {
+    return { ok: false, error: "This item can't be ordered online right now." };
+  }
+
+  const subtotal = unitPrice * qty;
+
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
+  // Orders are written with the service-role client: customers no longer
+  // have direct insert access to orders/order_items (see migration 0019).
+  const admin = createAdminClient();
+
   let discount = 0;
   let couponId: string | null = null;
   if (input.couponCode) {
-    const { data: coupon } = await supabase
+    const { data: coupon } = await admin
       .from("coupons")
       .select("id, discount_type, discount_value, min_order_amount, active, expires_at, max_uses, used_count")
       .eq("code", input.couponCode.trim().toUpperCase())
@@ -138,28 +194,31 @@ export async function placeQuickOrderAction(input: QuickOrderInput): Promise<Pla
       const notExpired = !coupon.expires_at || new Date(coupon.expires_at) > new Date();
       const usesLeft = !coupon.max_uses || coupon.used_count < coupon.max_uses;
       if (notExpired && usesLeft) {
-        discount =
+        discount = Math.min(
+          subtotal,
           coupon.discount_type === "percent"
             ? Math.round((subtotal * coupon.discount_value) / 100)
-            : coupon.discount_value;
+            : Number(coupon.discount_value)
+        );
         couponId = coupon.id;
       }
     }
   }
 
-  const deliveryCharge = Math.max(0, input.deliveryCharge ?? 0);
+  const deliveryCharge = await resolveDeliveryCharge(input);
   const total = Math.max(0, subtotal - discount) + deliveryCharge;
   // Can't take a bigger advance than the order is actually worth (matters for
   // low-priced snack items under the fixed advance amount).
   const advanceAmount = Math.min(QUICK_ORDER_ADVANCE_AMOUNT, total);
+  const isQr = input.paymentMethod === "qr_manual";
 
-  const { data: order, error: orderError } = await supabase
+  const { data: order, error: orderError } = await admin
     .from("orders")
     .insert({
       customer_id: user?.id ?? null,
       customer_name: input.customerName.trim(),
       customer_phone: input.phone.trim(),
-      customer_email: null,
+      customer_email: user?.email ?? null,
       delivery_address: input.address.trim(),
       delivery_instructions: input.deliveryInstructions?.trim() || null,
       event_date: input.eventDate || null,
@@ -169,8 +228,10 @@ export async function placeQuickOrderAction(input: QuickOrderInput): Promise<Pla
       coupon_id: couponId,
       total,
       advance_amount: advanceAmount,
-      payment_method: input.paymentMethod,
-      payment_status: "unpaid",
+      payment_method: isQr ? "qr_manual" : "razorpay",
+      // A QR/UPI order is paid outside the app, so it waits for staff to
+      // confirm the money arrived ("Confirm Advance Received" on the order).
+      payment_status: isQr ? "advance_pending" : "unpaid",
       order_status: "pending",
       delivery_charge: deliveryCharge,
       delivery_distance_km: input.deliveryDistanceKm ?? null,
@@ -181,31 +242,35 @@ export async function placeQuickOrderAction(input: QuickOrderInput): Promise<Pla
     .single();
 
   if (orderError || !order) {
-    return { ok: false, error: orderError?.message || "Could not create your order. Please try again." };
+    console.error("Order insert failed:", orderError);
+    return { ok: false, error: "Could not create your order. Please try again." };
   }
 
-  const { error: itemsError } = await supabase.from("order_items").insert({
+  const { error: itemsError } = await admin.from("order_items").insert({
     order_id: order.id,
-    product_id: input.productId,
-    product_name: input.productName,
+    product_id: product.id,
+    product_name: product.name,
     weight_label: input.weightLabel ?? null,
     flavour: input.flavour ?? null,
-    custom_message: input.customMessage ?? null,
-    quantity: input.qty,
-    unit_price: input.unitPrice,
-    line_total: input.unitPrice * input.qty,
+    custom_message: input.customMessage?.trim() || null,
+    quantity: qty,
+    unit_price: unitPrice,
+    line_total: subtotal,
   });
 
   if (itemsError) {
-    return { ok: false, error: itemsError.message };
+    console.error("Order items insert failed:", itemsError);
+    // Don't leave a half-written order (no items) in the kitchen's queue.
+    await admin.from("orders").delete().eq("id", order.id);
+    return { ok: false, error: "Could not create your order. Please try again." };
   }
 
   if (couponId) {
-    await supabase.rpc("increment_coupon_usage", { coupon_id: couponId });
+    await admin.rpc("increment_coupon_usage", { coupon_id: couponId });
   }
 
   if (user) {
-    await supabase.from("notifications").insert({
+    await admin.from("notifications").insert({
       user_id: user.id,
       title: `Order #${order.order_number} placed`,
       body: `Your order for ₹${total} has been received. We'll keep you posted as it moves along.`,
@@ -242,10 +307,12 @@ export async function validateCouponAction(code: string, subtotal: number): Prom
     return { ok: false, error: `This coupon needs a minimum order of ₹${coupon.min_order_amount}.` };
   }
 
-  const discount =
+  const discount = Math.min(
+    subtotal,
     coupon.discount_type === "percent"
       ? Math.round((subtotal * coupon.discount_value) / 100)
-      : coupon.discount_value;
+      : Number(coupon.discount_value)
+  );
 
   return { ok: true, discount, code: coupon.code };
 }

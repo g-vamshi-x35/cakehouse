@@ -71,7 +71,7 @@ export default function OrderControls({
         </div>
       </div>
 
-      {paymentStatus === "advance_pending" && (
+      {(paymentStatus === "advance_pending" || paymentStatus === "unpaid") && (
         <div>
           <p className="text-xs font-semibold uppercase text-ink/50 mb-2">Payment</p>
           <button
