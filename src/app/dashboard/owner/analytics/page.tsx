@@ -13,12 +13,15 @@ export default async function AnalyticsPage() {
       .gte("created_at", thirtyDaysAgo.toISOString()),
     supabase
       .from("order_items")
-      .select("product_name, quantity, line_total, orders!inner(created_at)")
-      .gte("orders.created_at", thirtyDaysAgo.toISOString()),
+      .select("product_name, quantity, line_total, orders!inner(created_at, order_status)")
+      .gte("orders.created_at", thirtyDaysAgo.toISOString())
+      .neq("orders.order_status", "cancelled"),
   ]);
 
-  const totalRevenue = (orders ?? []).reduce((sum, o) => sum + Number(o.total), 0);
-  const totalOrders = orders?.length ?? 0;
+  // Cancelled orders aren't revenue (they're still counted separately below).
+  const activeOrders = (orders ?? []).filter((o) => o.order_status !== "cancelled");
+  const totalRevenue = activeOrders.reduce((sum, o) => sum + Number(o.total), 0);
+  const totalOrders = activeOrders.length;
   const avgOrderValue = totalOrders > 0 ? Math.round(totalRevenue / totalOrders) : 0;
   const cancelledCount = (orders ?? []).filter((o) => o.order_status === "cancelled").length;
 

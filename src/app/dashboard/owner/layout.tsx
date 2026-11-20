@@ -21,6 +21,7 @@ import {
 } from "react-icons/fi";
 import { requireRole } from "@/lib/auth/guards";
 import { signOutAction } from "@/lib/auth/actions";
+import MobileDashboardNav from "@/components/admin/MobileDashboardNav";
 
 const NAV = [
   { href: "/dashboard/owner", label: "Overview", icon: FiGrid },
@@ -83,7 +84,10 @@ export default async function OwnerDashboardLayout({ children }: { children: Rea
         </div>
       </aside>
 
-      <main className="flex-1 min-w-0 p-5 md:p-8">{children}</main>
+      <main className="flex-1 min-w-0 p-5 md:p-8">
+        <MobileDashboardNav items={NAV} title="Owner Dashboard" />
+        {children}
+      </main>
     </div>
   );
 }

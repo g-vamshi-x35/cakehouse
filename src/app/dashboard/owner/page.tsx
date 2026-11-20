@@ -6,12 +6,12 @@ import OrderStatusBadge from "@/components/account/OrderStatusBadge";
 import { createClient } from "@/lib/supabase/server";
 import { buildWhatsAppLinkToNumber } from "@/lib/whatsapp";
 import { business } from "@/data/business";
+import { startOfTodayIST, todayMonthDayIST } from "@/lib/orders/time";
 
 export default async function OwnerOverviewPage() {
   const supabase = await createClient();
 
-  const todayStart = new Date();
-  todayStart.setHours(0, 0, 0, 0);
+  const todayStart = startOfTodayIST();
 
   const [
     { count: todayOrders },
@@ -22,9 +22,13 @@ export default async function OwnerOverviewPage() {
     { data: birthdayCandidates },
   ] = await Promise.all([
     supabase.from("orders").select("id", { count: "exact", head: true }).gte("created_at", todayStart.toISOString()),
-    supabase.from("orders").select("id", { count: "exact", head: true }).in("order_status", ["pending", "confirmed", "baking"]),
+    supabase.from("orders").select("id", { count: "exact", head: true }).in("order_status", ["pending", "confirmed", "baking", "ready", "out_for_delivery"]),
     supabase.from("profiles").select("id", { count: "exact", head: true }).eq("role", "customer"),
-    supabase.from("orders").select("total, created_at").gte("created_at", todayStart.toISOString()),
+    supabase
+      .from("orders")
+      .select("total, created_at")
+      .gte("created_at", todayStart.toISOString())
+      .neq("order_status", "cancelled"),
     supabase
       .from("orders")
       .select("id, order_number, customer_name, total, order_status, created_at")
@@ -35,11 +39,11 @@ export default async function OwnerOverviewPage() {
 
   const todayRevenue = (revenueRows ?? []).reduce((sum, r) => sum + Number(r.total), 0);
 
-  const now = new Date();
+  const today = todayMonthDayIST();
   const todaysBirthdays = (birthdayCandidates ?? []).filter((c) => {
     if (!c.birthday) return false;
     const [, month, day] = c.birthday.split("-").map(Number);
-    return month === now.getMonth() + 1 && day === now.getDate();
+    return month === today.month && day === today.day;
   });
 
   return (

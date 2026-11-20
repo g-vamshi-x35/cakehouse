@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { sendEmail, birthdayEmail } from "@/lib/email";
+import { todayMonthDayIST } from "@/lib/orders/time";
 
 /**
  * Daily birthday job. Schedule this to run once a day (e.g. just after
@@ -28,9 +29,8 @@ export async function GET(request: Request) {
   }
 
   const supabase = createAdminClient();
-  const now = new Date();
-  const todayMonth = now.getMonth() + 1;
-  const todayDay = now.getDate();
+  // India time — the server runs on UTC.
+  const { month: todayMonth, day: todayDay } = todayMonthDayIST();
 
   const { data: customers, error } = await supabase
     .from("profiles")
