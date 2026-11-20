@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
 
 const inputClasses =
   "w-full rounded-xl border border-brown/20 bg-cream-light px-4 py-3 text-sm text-ink placeholder:text-ink/40 focus:outline-none focus:ring-2 focus:ring-rose/60 transition-shadow";
@@ -18,6 +19,9 @@ export default function ResetPasswordForm() {
   const [done, setDone] = useState(false);
 
   useEffect(() => {
+    // Without Supabase there's no recovery session to wait for — leave the
+    // "Reset Link Required" message up instead of crashing the page.
+    if (!isSupabaseConfigured()) return;
     const supabase = createClient();
     // The reset-link redirect establishes a temporary recovery session via
     // the URL — Supabase's client picks it up automatically on load and

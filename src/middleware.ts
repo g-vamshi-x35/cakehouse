@@ -20,7 +20,14 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith(DELIVERY_PREFIX);
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    // Supabase isn't configured yet — don't hard-lock the whole site out.
+    // Supabase isn't configured yet — don't hard-lock the whole site out,
+    // but protected pages can't work without it. Redirect them to login here:
+    // their layout guards would redirect too, but pages render in parallel
+    // with layouts and would crash creating a Supabase client first.
+    if (isProtected) {
+      const loginPath = pathname.startsWith("/dashboard") ? "/staff/login" : "/login";
+      return NextResponse.redirect(new URL(loginPath, request.url));
+    }
     return response;
   }
 
