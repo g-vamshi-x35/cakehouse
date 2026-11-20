@@ -333,7 +333,7 @@ function QuickOrderModalInner({
         razorpay_payment_id: string;
         razorpay_signature: string;
       }) => {
-        await fetch("/api/payments/verify", {
+        const verifyRes = await fetch("/api/payments/verify", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -343,7 +343,16 @@ function QuickOrderModalInner({
             razorpaySignature: response.razorpay_signature,
             isAdvance: true,
           }),
-        });
+        }).catch(() => null);
+        if (!verifyRes?.ok) {
+          // Razorpay took the money but our server couldn't confirm it (network
+          // blip, etc.). Tell the customer instead of silently showing success,
+          // and stop them paying twice — staff can confirm it manually.
+          toast.error(
+            `We couldn't confirm your payment automatically. Please don't pay again — share order ${result.orderNumber} with us on WhatsApp and we'll confirm it.`,
+            { duration: 10000 }
+          );
+        }
         onClose();
         router.push(`/checkout/success/${result.orderId}?method=razorpay`);
       },

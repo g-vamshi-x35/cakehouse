@@ -4,6 +4,7 @@ import Image from "next/image";
 import { FiGrid, FiShoppingBag, FiDollarSign, FiBell, FiLogOut } from "react-icons/fi";
 import { requireRole } from "@/lib/auth/guards";
 import { signOutAction } from "@/lib/auth/actions";
+import MobileDashboardNav from "@/components/admin/MobileDashboardNav";
 
 const NAV = [
   { href: "/dashboard/delivery", label: "Today", icon: FiGrid },
@@ -56,17 +57,7 @@ export default async function DeliveryDashboardLayout({ children }: { children: 
       </aside>
 
       <main className="flex-1 min-w-0 p-5 md:p-8">
-        <div className="lg:hidden flex items-center gap-4 mb-6 overflow-x-auto pb-2">
-          {NAV.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="flex items-center gap-2 px-4 py-2 rounded-full bg-cream text-brown text-sm font-semibold shrink-0"
-            >
-              <item.icon size={14} /> {item.label}
-            </Link>
-          ))}
-        </div>
+        <MobileDashboardNav items={NAV} title="Delivery Dashboard" />
         {children}
       </main>
     </div>
