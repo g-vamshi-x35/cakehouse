@@ -3,6 +3,11 @@
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
+
+// Shown instead of crashing when .env.local doesn't have the Supabase keys.
+const NOT_CONFIGURED =
+  "Login isn't set up yet: add the Supabase keys to .env.local (see .env.example) and restart the server.";
 
 export type AuthActionState = { error?: string } | null;
 export type ForgotPasswordState = { error?: string; success?: boolean } | null;
@@ -16,6 +21,7 @@ export async function signUpAction(
   _prevState: AuthActionState,
   formData: FormData
 ): Promise<AuthActionState> {
+  if (!isSupabaseConfigured()) return { error: NOT_CONFIGURED };
   const email = String(formData.get("email") || "").trim();
   const password = String(formData.get("password") || "");
   const fullName = String(formData.get("fullName") || "").trim();
@@ -46,6 +52,7 @@ export async function signInAction(
   _prevState: AuthActionState,
   formData: FormData
 ): Promise<AuthActionState> {
+  if (!isSupabaseConfigured()) return { error: NOT_CONFIGURED };
   const email = String(formData.get("email") || "").trim();
   const password = String(formData.get("password") || "");
 
@@ -60,6 +67,7 @@ export async function staffSignInAction(
   _prevState: AuthActionState,
   formData: FormData
 ): Promise<AuthActionState> {
+  if (!isSupabaseConfigured()) return { error: NOT_CONFIGURED };
   const email = String(formData.get("email") || "").trim();
   const password = String(formData.get("password") || "");
 
@@ -85,6 +93,7 @@ export async function requestPasswordResetAction(
   _prevState: ForgotPasswordState,
   formData: FormData
 ): Promise<ForgotPasswordState> {
+  if (!isSupabaseConfigured()) return { error: NOT_CONFIGURED };
   const email = String(formData.get("email") || "").trim();
   if (!email) return { error: "Please enter your email address." };
 
@@ -103,6 +112,7 @@ export async function requestPasswordResetAction(
 }
 
 export async function signOutAction() {
+  if (!isSupabaseConfigured()) redirect("/");
   const supabase = await createClient();
   await supabase.auth.signOut();
   redirect("/");
