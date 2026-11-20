@@ -2,6 +2,11 @@
 
 import { useEffect, type ReactNode } from "react";
 import Lenis from "lenis";
+// Required Lenis styles. Without `html.lenis { height: auto }` the <html>
+// element stays locked to the viewport height (layout.tsx gives it h-full),
+// so Lenis never sees the page grow after images/data load and stops the
+// scroll at the height it measured on first paint (~140px on the home page).
+import "lenis/dist/lenis.css";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
