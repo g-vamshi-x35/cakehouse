@@ -4,12 +4,13 @@ import { AdminPageHeader, AdminTable } from "@/components/admin/AdminUI";
 import DeleteButton from "@/components/admin/DeleteButton";
 import { deleteProductAction } from "@/lib/actions/admin";
 import { createClient } from "@/lib/supabase/server";
+import ProductCell, { productThumbUrl, type ProductImage } from "@/components/admin/ProductCell";
 
 export default async function ProductsPage() {
   const supabase = await createClient();
   const { data: products } = await supabase
     .from("products")
-    .select("id, name, slug, sku, price_500, base_price, is_active, is_featured, categories ( name )")
+    .select("id, name, slug, sku, price_500, base_price, is_active, is_featured, categories ( name ), product_images ( url, sort_order )")
     .order("created_at", { ascending: false });
 
   return (
@@ -27,13 +28,14 @@ export default async function ProductsPage() {
         }
       />
 
-      <AdminTable columns={["SKU", "Name", "Category", "Price", "Status", "Featured", ""]}>
+      <AdminTable columns={["Product", "Category", "Price", "Status", "Featured", ""]}>
         {(products ?? []).map((p) => {
           const category = Array.isArray(p.categories) ? p.categories[0] : p.categories;
           return (
             <tr key={p.id}>
-              <td className="px-4 py-3 text-ink/50 font-mono text-xs">{p.sku ?? "—"}</td>
-              <td className="px-4 py-3 font-semibold text-ink">{p.name}</td>
+              <td className="px-4 py-3">
+                <ProductCell name={p.name} sku={p.sku} imageUrl={productThumbUrl(p.slug, p.product_images as unknown as ProductImage[])} />
+              </td>
               <td className="px-4 py-3 text-ink/60">{category?.name ?? "—"}</td>
               <td className="px-4 py-3">₹{p.price_500 ?? p.base_price ?? "—"}</td>
               <td className="px-4 py-3">
@@ -58,7 +60,7 @@ export default async function ProductsPage() {
         })}
         {(!products || products.length === 0) && (
           <tr>
-            <td colSpan={7} className="px-4 py-8 text-center text-ink/50">
+            <td colSpan={6} className="px-4 py-8 text-center text-ink/50">
               No products yet.
             </td>
           </tr>

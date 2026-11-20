@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { FiGrid, FiShoppingBag, FiPackage, FiBell, FiEdit3, FiLogOut } from "react-icons/fi";
+import { FiGrid, FiShoppingBag, FiPackage, FiBell, FiEdit3, FiLogOut, FiBox } from "react-icons/fi";
 import { requireRole } from "@/lib/auth/guards";
 import { signOutAction } from "@/lib/auth/actions";
 import MobileDashboardNav from "@/components/admin/MobileDashboardNav";
@@ -9,6 +9,7 @@ import MobileDashboardNav from "@/components/admin/MobileDashboardNav";
 const NAV = [
   { href: "/dashboard/employee", label: "Today", icon: FiGrid },
   { href: "/dashboard/employee/orders", label: "Orders", icon: FiShoppingBag },
+  { href: "/dashboard/employee/products", label: "Products", icon: FiBox },
   { href: "/dashboard/employee/custom-cakes", label: "Custom Cakes", icon: FiEdit3 },
   { href: "/dashboard/employee/inventory", label: "Inventory", icon: FiPackage },
   { href: "/dashboard/employee/notifications", label: "Notifications", icon: FiBell },
