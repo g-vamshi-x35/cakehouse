@@ -1,10 +1,8 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient, isAdminClientConfigured } from "@/lib/supabase/admin";
 import { getProductById } from "@/lib/data/products";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
-import { QUICK_ORDER_ADVANCE_AMOUNT } from "@/lib/orders/constants";
 import { geocodeAddress, reverseGeocode, distanceFromShopKm } from "@/lib/delivery/geocode";
 import { calculateDeliveryCharge, FLAT_RATE_ACTIVE, FLAT_RATE } from "@/lib/delivery/pricing";
 import { matchVillageCharge } from "@/lib/delivery/villages";
@@ -128,14 +126,12 @@ async function resolveDeliveryCharge(input: QuickOrderInput): Promise<number> {
   return Math.max(0, Math.round(input.deliveryCharge ?? 0));
 }
 
-const MAX_QTY = 50;
-
 export async function placeQuickOrderAction(input: QuickOrderInput): Promise<PlaceOrderResult> {
   if (!input.customerName.trim() || !input.phone.trim() || !input.address.trim()) {
     return { ok: false, error: "Please fill in your name, phone number and delivery address." };
   }
 
-  if (!isSupabaseConfigured() || !isAdminClientConfigured()) {
+  if (!isSupabaseConfigured()) {
     return {
       ok: false,
       error:
@@ -143,142 +139,57 @@ export async function placeQuickOrderAction(input: QuickOrderInput): Promise<Pla
     };
   }
 
-  const qty = Math.floor(Number(input.qty));
-  if (!Number.isFinite(qty) || qty < 1 || qty > MAX_QTY) {
-    return { ok: false, error: `Quantity must be between 1 and ${MAX_QTY}.` };
-  }
-
-  // Price always comes from the database — never from the browser, where it
-  // could be edited to anything.
+  // Curated availability (e.g. seasonal items switched off) lives in the
+  // static catalog, so it's checked here; the price itself is looked up by
+  // the database function below and never taken from the browser.
   const product = await getProductById(input.productId);
   if (!product) return { ok: false, error: "This item is no longer available." };
   if (product.available === false) {
     return { ok: false, error: "This item is currently unavailable." };
   }
 
-  let unitPrice: number;
-  if (product.weightOptions?.length) {
-    const option = product.weightOptions.find((w) => w.label === input.weightLabel);
-    if (!option || option.price == null) {
-      return { ok: false, error: "Please choose a valid size for this item." };
-    }
-    unitPrice = Number(option.price);
-  } else {
-    unitPrice = Number(product.price);
-  }
-  if (!Number.isFinite(unitPrice) || unitPrice <= 0) {
-    return { ok: false, error: "This item can't be ordered online right now." };
-  }
-
-  const subtotal = unitPrice * qty;
-
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  // Orders are written with the service-role client: customers no longer
-  // have direct insert access to orders/order_items (see migration 0019).
-  const admin = createAdminClient();
-
-  let discount = 0;
-  let couponId: string | null = null;
-  if (input.couponCode) {
-    const { data: coupon } = await admin
-      .from("coupons")
-      .select("id, discount_type, discount_value, min_order_amount, active, expires_at, max_uses, used_count")
-      .eq("code", input.couponCode.trim().toUpperCase())
-      .maybeSingle();
-
-    if (coupon && coupon.active && subtotal >= coupon.min_order_amount) {
-      const notExpired = !coupon.expires_at || new Date(coupon.expires_at) > new Date();
-      const usesLeft = !coupon.max_uses || coupon.used_count < coupon.max_uses;
-      if (notExpired && usesLeft) {
-        discount = Math.min(
-          subtotal,
-          coupon.discount_type === "percent"
-            ? Math.round((subtotal * coupon.discount_value) / 100)
-            : Number(coupon.discount_value)
-        );
-        couponId = coupon.id;
-      }
-    }
-  }
-
   const deliveryCharge = await resolveDeliveryCharge(input);
-  const total = Math.max(0, subtotal - discount) + deliveryCharge;
-  // Can't take a bigger advance than the order is actually worth (matters for
-  // low-priced snack items under the fixed advance amount).
-  const advanceAmount = Math.min(QUICK_ORDER_ADVANCE_AMOUNT, total);
-  const isQr = input.paymentMethod === "qr_manual";
 
-  const { data: order, error: orderError } = await admin
-    .from("orders")
-    .insert({
-      customer_id: user?.id ?? null,
-      customer_name: input.customerName.trim(),
-      customer_phone: input.phone.trim(),
-      customer_email: user?.email ?? null,
-      delivery_address: input.address.trim(),
-      delivery_instructions: input.deliveryInstructions?.trim() || null,
-      event_date: input.eventDate || null,
-      event_time: input.eventTime || null,
-      subtotal,
-      discount,
-      coupon_id: couponId,
-      total,
-      advance_amount: advanceAmount,
-      payment_method: isQr ? "qr_manual" : "razorpay",
-      // A QR/UPI order is paid outside the app, so it waits for staff to
-      // confirm the money arrived ("Confirm Advance Received" on the order).
-      payment_status: isQr ? "advance_pending" : "unpaid",
-      order_status: "pending",
-      delivery_charge: deliveryCharge,
-      delivery_distance_km: input.deliveryDistanceKm ?? null,
-      delivery_lat: input.deliveryLat ?? null,
-      delivery_lng: input.deliveryLng ?? null,
-    })
-    .select("id, order_number")
-    .single();
-
-  if (orderError || !order) {
-    console.error("Order insert failed:", orderError);
-    return { ok: false, error: "Could not create your order. Please try again." };
-  }
-
-  const { error: itemsError } = await admin.from("order_items").insert({
-    order_id: order.id,
-    product_id: product.id,
-    product_name: product.name,
-    weight_label: input.weightLabel ?? null,
-    flavour: input.flavour ?? null,
-    custom_message: input.customMessage?.trim() || null,
-    quantity: qty,
-    unit_price: unitPrice,
-    line_total: subtotal,
+  // place_quick_order (migration 0025) validates the price, coupon and
+  // customer inside the database, so this works with the public key alone —
+  // no service-role key needed for ordering.
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("place_quick_order", {
+    p_product_id: input.productId,
+    p_weight_label: input.weightLabel ?? "",
+    p_flavour: input.flavour ?? "",
+    p_custom_message: input.customMessage ?? "",
+    p_qty: Math.floor(Number(input.qty)),
+    p_customer_name: input.customerName,
+    p_phone: input.phone,
+    p_address: input.address,
+    p_instructions: input.deliveryInstructions ?? "",
+    p_event_date: input.eventDate || null,
+    p_event_time: input.eventTime || null,
+    p_payment_method: input.paymentMethod === "qr_manual" ? "qr_manual" : "razorpay",
+    p_coupon_code: input.couponCode ?? "",
+    p_delivery_charge: deliveryCharge,
+    p_distance_km: input.deliveryDistanceKm ?? null,
+    p_lat: input.deliveryLat ?? null,
+    p_lng: input.deliveryLng ?? null,
   });
 
-  if (itemsError) {
-    console.error("Order items insert failed:", itemsError);
-    // Don't leave a half-written order (no items) in the kitchen's queue.
-    await admin.from("orders").delete().eq("id", order.id);
-    return { ok: false, error: "Could not create your order. Please try again." };
+  const row = Array.isArray(data) ? data[0] : data;
+  if (error || !row) {
+    console.error("place_quick_order failed:", error);
+    // Our own validation messages (raised by the function) are safe to show.
+    const message = error?.message ?? "";
+    const friendly = /^(Please|Quantity|This item)/.test(message) ? message : "Could not create your order. Please try again.";
+    return { ok: false, error: friendly };
   }
 
-  if (couponId) {
-    await admin.rpc("increment_coupon_usage", { coupon_id: couponId });
-  }
-
-  if (user) {
-    await admin.from("notifications").insert({
-      user_id: user.id,
-      title: `Order #${order.order_number} placed`,
-      body: `Your order for ₹${total} has been received. We'll keep you posted as it moves along.`,
-      type: "order",
-    });
-  }
-
-  return { ok: true, orderId: order.id, orderNumber: order.order_number, total, advanceAmount };
+  return {
+    ok: true,
+    orderId: row.order_id,
+    orderNumber: row.order_number,
+    total: Number(row.total),
+    advanceAmount: Number(row.advance_amount),
+  };
 }
 
 export type CouponCheckResult =

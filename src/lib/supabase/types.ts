@@ -428,6 +428,32 @@ export interface Database {
         Args: { coupon_id: string };
         Returns: void;
       };
+      place_quick_order: {
+        Args: {
+          p_product_id: string;
+          p_weight_label: string;
+          p_flavour: string;
+          p_custom_message: string;
+          p_qty: number;
+          p_customer_name: string;
+          p_phone: string;
+          p_address: string;
+          p_instructions: string;
+          p_event_date: string | null;
+          p_event_time: string | null;
+          p_payment_method: string;
+          p_coupon_code: string;
+          p_delivery_charge: number;
+          p_distance_km: number | null;
+          p_lat: number | null;
+          p_lng: number | null;
+        };
+        Returns: { order_id: string; order_number: string; total: number; advance_amount: number }[];
+      };
+      get_order_confirmation: {
+        Args: { p_order_id: string };
+        Returns: Record<string, unknown> | null;
+      };
     };
     Enums: {
       user_role: UserRole;

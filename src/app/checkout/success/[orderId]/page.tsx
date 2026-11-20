@@ -6,7 +6,7 @@ import PageHero from "@/components/ui/PageHero";
 import Button from "@/components/ui/Button";
 import PaymentQrCard from "@/components/checkout/PaymentQrCard";
 import OrderCelebration from "@/components/checkout/OrderCelebration";
-import { createAdminClient, isAdminClientConfigured } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { business } from "@/data/business";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
@@ -66,26 +66,18 @@ export default async function OrderSuccessPage({ params, searchParams }: Props) 
   let order: OrderRow | null = null;
   let orderItems: OrderItemRow[] = [];
 
-  // Guest orders aren't readable through the public API any more (they used
-  // to leak every guest's phone/address), so read this one server-side. The
-  // order's random UUID in the URL is what grants access to it.
-  if (isSupabaseConfigured() && isAdminClientConfigured() && UUID_RE.test(orderId)) {
-    const supabase = createAdminClient();
-    const [{ data: orderData }, { data: itemsData }] = await Promise.all([
-      supabase
-        .from("orders")
-        .select(
-          "order_number, customer_name, customer_phone, total, advance_amount, delivery_address, delivery_charge, delivery_distance_km, event_date, payment_status"
-        )
-        .eq("id", orderId)
-        .maybeSingle(),
-      supabase
-        .from("order_items")
-        .select("product_name, weight_label, flavour, quantity")
-        .eq("order_id", orderId),
-    ]);
-    order = orderData;
-    orderItems = itemsData ?? [];
+  // Guest orders aren't readable through the public API (that used to leak
+  // every guest's phone/address), so this page reads its one order through
+  // get_order_confirmation (migration 0025). The order's random UUID in the
+  // URL is what grants access to it.
+  if (isSupabaseConfigured() && UUID_RE.test(orderId)) {
+    const supabase = await createClient();
+    const { data } = await supabase.rpc("get_order_confirmation", { p_order_id: orderId });
+    if (data) {
+      const { items, ...rest } = data as OrderRow & { items?: OrderItemRow[] };
+      order = rest;
+      orderItems = items ?? [];
+    }
   }
 
   const whatsappHref = buildWhatsAppLink(
