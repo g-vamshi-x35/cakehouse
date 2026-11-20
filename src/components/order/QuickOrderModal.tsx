@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import toast from "react-hot-toast";
@@ -48,6 +48,16 @@ function minAdvanceLeadHours() {
 
 export default function QuickOrderModal() {
   const { openProduct, initialSelection, hydrated, close } = useQuickOrder();
+
+  // Esc closes the popup, like every other dialog.
+  useEffect(() => {
+    if (!openProduct) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") close();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [openProduct, close]);
 
   if (!openProduct) return null;
 
