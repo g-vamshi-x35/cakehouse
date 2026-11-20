@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from "@/lib/supabase/config";
 
 const CUSTOMER_PREFIX = "/account";
 const OWNER_PREFIX = "/dashboard/owner";
@@ -9,8 +10,8 @@ const DELIVERY_PREFIX = "/dashboard/delivery";
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request });
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  const supabaseUrl = SUPABASE_URL;
+  const supabaseAnonKey = SUPABASE_PUBLISHABLE_KEY;
 
   const { pathname } = request.nextUrl;
   const isProtected =

@@ -1,6 +1,7 @@
 import "server-only";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./types";
+import { SUPABASE_URL } from "./config";
 
 /**
  * Service-role client for trusted server-only contexts (webhooks, cron jobs,
@@ -8,12 +9,12 @@ import type { Database } from "./types";
  */
 export function createAdminClient() {
   return createSupabaseClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    SUPABASE_URL,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
     { auth: { persistSession: false } }
   );
 }
 
 export function isAdminClientConfigured(): boolean {
-  return Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
+  return Boolean(SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
 }
