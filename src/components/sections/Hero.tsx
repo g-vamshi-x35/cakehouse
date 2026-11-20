@@ -1,21 +1,15 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import Image from "next/image";
+import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import Button from "@/components/ui/Button";
 import { FiArrowDown } from "react-icons/fi";
 
-const FALLBACK_IMAGE = "/images/hero/hero-purple-ombre-cake.jpg";
+const HERO_VIDEO = "/video/hero.mp4";
 
-export default function Hero({ videoSrc }: { videoSrc?: string }) {
+export default function Hero() {
   const rootRef = useRef<HTMLDivElement>(null);
   const mediaRef = useRef<HTMLDivElement>(null);
-  // getHeroVideoSrc() only confirms the file exists on disk — this covers
-  // the case where it exists but fails at runtime (corrupt file, codec the
-  // browser can't decode, etc.) by falling back to the static image.
-  const [videoFailed, setVideoFailed] = useState(false);
-  const showVideo = Boolean(videoSrc) && !videoFailed;
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -54,28 +48,19 @@ export default function Hero({ videoSrc }: { videoSrc?: string }) {
       ref={rootRef}
       className="relative min-h-[92vh] flex items-end md:items-center overflow-hidden"
     >
-      <div ref={mediaRef} className="absolute inset-0">
-        {showVideo ? (
-          <video
-            src={videoSrc}
-            poster={FALLBACK_IMAGE}
-            preload="auto"
-            autoPlay
-            muted
-            loop
-            playsInline
-            onError={() => setVideoFailed(true)}
-            className="absolute inset-0 w-full h-full object-cover object-[65%_30%]"
-          />
-        ) : (
-          <Image
-            src={FALLBACK_IMAGE}
-            alt="Handcrafted purple ombre butterfly cake by Cake House"
-            fill
-            priority
-            className="object-cover object-[65%_30%]"
-          />
-        )}
+      {/* Video only, no poster image: a dark background shows for the
+          moment before the first frame loads. */}
+      <div ref={mediaRef} className="absolute inset-0 bg-ink">
+        <video
+          src={HERO_VIDEO}
+          preload="auto"
+          autoPlay
+          muted
+          loop
+          playsInline
+          aria-hidden="true"
+          className="absolute inset-0 w-full h-full object-cover object-[65%_30%]"
+        />
       </div>
       <div className="absolute inset-0 bg-gradient-to-t from-ink/85 via-ink/45 to-ink/20" />
       <div className="absolute inset-0 bg-gradient-to-r from-ink/60 via-transparent to-transparent" />
