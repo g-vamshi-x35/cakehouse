@@ -114,13 +114,21 @@ export function servingSizeFor(weightLabel: string): string {
   return table[weightLabel] ?? "Varies by size";
 }
 
+// Flavour choices for customized & bento cakes: every flavour on the shop's
+// price list in the regular 290–350 range. Dark Truffle (450) and Kit Kat
+// (550) are left out because customized cakes have one fixed price.
 const CAKE_FLAVOURS = [
   "Vanilla",
-  "Chocolate",
+  "Pineapple",
   "Butterscotch",
   "Black Forest",
+  "Chocolate",
+  "Tutti Frutti",
   "Red Velvet",
-  "Pineapple",
+  "Rasmalai",
+  "Strawberry",
+  "Mango",
+  "White Forest",
 ];
 
 function weightOptionsFrom(price500?: number, price1000?: number): WeightOption[] | undefined {
@@ -147,7 +155,7 @@ export const products: Product[] = [
     description:
       "A timeless classic — soft, moist vanilla sponge layered with light vanilla cream. Simple, comforting and always a crowd-pleaser.",
     ingredients: `Refined flour, sugar, fresh cream, vegetable oil, vanilla essence, baking essentials. ${EGGLESS_NOTE}`,
-    images: ["/images/products/cakes/vanilla-cake/1.jpg"],
+    images: ["/images/products/cakes/vanilla-cake/2.jpg"],
     price: 290,
     weightOptions: weightOptionsFrom(290, 550),
     flavours: ["Vanilla"],
@@ -175,7 +183,7 @@ export const products: Product[] = [
     description:
       "Fresh pineapple chunks folded into a soft vanilla sponge, finished with a light whipped cream and pineapple glaze.",
     ingredients: `Refined flour, fresh cream, pineapple compote, sugar, vegetable oil, baking essentials. ${EGGLESS_NOTE}`,
-    images: ["/images/products/cakes/pineapple-cake/1.jpg"],
+    images: ["/images/products/cakes/pineapple-cake/2.jpg"],
     price: 290,
     weightOptions: weightOptionsFrom(290, 590),
     flavours: ["Pineapple"],
@@ -203,7 +211,7 @@ export const products: Product[] = [
     description:
       "Caramelised butterscotch sponge layered with praline crunch and butterscotch cream — rich, nutty and irresistible.",
     ingredients: `Refined flour, butterscotch praline, fresh cream, sugar, vegetable oil, baking essentials. ${EGGLESS_NOTE}`,
-    images: ["/images/products/cakes/butterscotch-cake/1.jpg"],
+    images: ["/images/products/cakes/butterscotch-cake/2.jpg"],
     price: 290,
     weightOptions: weightOptionsFrom(290, 590),
     flavours: ["Butterscotch"],
@@ -218,7 +226,7 @@ export const products: Product[] = [
     description:
       "The bestseller — chocolate sponge soaked lightly, layered with whipped cream, cherries and chocolate shavings.",
     ingredients: `Refined flour, cocoa, fresh cream, cherries, chocolate shavings, sugar, vegetable oil, baking essentials. ${EGGLESS_NOTE}`,
-    images: ["/images/products/cakes/black-forest-cake/1.jpg"],
+    images: ["/images/products/cakes/black-forest-cake/2.jpg"],
     price: 290,
     weightOptions: weightOptionsFrom(290, 590),
     flavours: ["Black Forest"],
@@ -247,7 +255,7 @@ export const products: Product[] = [
     description:
       "A deep, indulgent chocolate sponge layered with silky chocolate ganache — made for true chocolate lovers.",
     ingredients: `Refined flour, cocoa, chocolate ganache, fresh cream, sugar, vegetable oil, baking essentials. ${EGGLESS_NOTE}`,
-    images: ["/images/products/cakes/chocolate-cake/1.jpg"],
+    images: ["/images/products/cakes/chocolate-cake/2.jpg"],
     price: 290,
     weightOptions: weightOptionsFrom(290, 590),
     flavours: ["Chocolate"],
@@ -289,7 +297,7 @@ export const products: Product[] = [
     description:
       "Decadent dark chocolate sponge enrobed in glossy truffle ganache — for the serious chocolate connoisseur.",
     ingredients: `Refined flour, dark cocoa, truffle ganache, fresh cream, sugar, vegetable oil, baking essentials. ${EGGLESS_NOTE}`,
-    images: ["/images/products/cakes/dark-truffle-cake/1.jpg"],
+    images: ["/images/products/cakes/dark-truffle-cake/2.jpg"],
     price: 450,
     weightOptions: weightOptionsFrom(450, 900),
     flavours: ["Dark Chocolate"],
@@ -305,7 +313,7 @@ export const products: Product[] = [
     description:
       "Soft vanilla sponge studded with colourful candied tutti frutti bits, finished with a fresh fruit topping — a fun, fruity favourite.",
     ingredients: `Refined flour, tutti frutti, fresh cream, seasonal fruit, sugar, vegetable oil, baking essentials. ${EGGLESS_NOTE}`,
-    images: ["/images/menu/menu-fruit-cake.jpg"],
+    images: ["/images/products/cakes/tutti-frutti-cake/2.jpg"],
     price: 290,
     weightOptions: weightOptionsFrom(290, 590),
     flavours: ["Tutti Frutti"],
@@ -320,7 +328,7 @@ export const products: Product[] = [
     description:
       "Silky red velvet sponge layered with cream cheese frosting — elegant, smooth and beautifully balanced.",
     ingredients: `Refined flour, cocoa, cream cheese frosting, fresh cream, sugar, vegetable oil, food colour, baking essentials. ${EGGLESS_NOTE}`,
-    images: ["/images/products/cakes/red-velvet-cake/1.jpg"],
+    images: ["/images/products/cakes/red-velvet-cake/2.jpg"],
     price: 350,
     weightOptions: weightOptionsFrom(350, 700),
     flavours: ["Red Velvet"],
@@ -362,7 +370,7 @@ export const products: Product[] = [
     description:
       "Chocolate sponge wrapped in a ring of Kit Kat fingers, piled high with chocolates and drizzled ganache.",
     ingredients: `Refined flour, cocoa, chocolate ganache, wafer chocolates, fresh cream, sugar, vegetable oil, baking essentials. ${EGGLESS_NOTE}`,
-    images: [],
+    images: ["/images/products/cakes/kit-kat-cake/2.jpg"],
     price: 550,
     weightOptions: weightOptionsFrom(550, 1000),
     flavours: ["Chocolate"],
@@ -377,7 +385,7 @@ export const products: Product[] = [
     description:
       "A fusion favourite — soft sponge soaked in rasmalai milk, layered with malai cream and chopped pistachios.",
     ingredients: `Refined flour, milk, rasmalai, fresh cream, pistachios, sugar, vegetable oil, baking essentials. ${EGGLESS_NOTE}`,
-    images: ["/images/products/cakes/rasmalai-cake/1.jpg"],
+    images: ["/images/products/cakes/rasmalai-cake/2.jpg"],
     price: 290,
     weightOptions: weightOptionsFrom(290, 590),
     flavours: ["Rasmalai"],
@@ -490,7 +498,7 @@ export const products: Product[] = [
     description:
       "A rich, creamy baked cheesecake on a buttery biscuit base — smooth, dense and indulgent in every bite.",
     ingredients: `Refined flour, cream cheese, fresh cream, biscuit crumb, sugar, vegetable oil, baking essentials. ${EGGLESS_NOTE}`,
-    images: ["/images/products/cakes/cheesecake/1.jpg"],
+    images: ["/images/products/cakes/cheesecake/2.jpg"],
     price: 450,
     weightOptions: weightOptionsFrom(450, 900),
     flavours: ["Classic", "Blueberry", "Strawberry"],
@@ -505,7 +513,7 @@ export const products: Product[] = [
     description:
       "Soft vanilla-chocolate sponge studded with chocolate chips throughout, finished with a light cream frosting.",
     ingredients: `Refined flour, chocolate chips, fresh cream, cocoa, sugar, vegetable oil, baking essentials. ${EGGLESS_NOTE}`,
-    images: [],
+    images: ["/images/products/cakes/choco-chip-cake/2.jpg"],
     price: 290,
     weightOptions: weightOptionsFrom(290, 590),
     flavours: ["Chocolate Chip"],
@@ -520,7 +528,7 @@ export const products: Product[] = [
     description:
       "Moist chocolate sponge layered with silky chocolate truffle cream and a glossy ganache finish.",
     ingredients: `Refined flour, cocoa, chocolate truffle cream, fresh cream, sugar, vegetable oil, baking essentials. ${EGGLESS_NOTE}`,
-    images: ["/images/products/cakes/chocolate-truffle-cake/1.jpg"],
+    images: ["/images/products/cakes/chocolate-truffle-cake/2.jpg"],
     price: 400,
     weightOptions: weightOptionsFrom(400, 800),
     flavours: ["Chocolate Truffle"],
@@ -535,7 +543,7 @@ export const products: Product[] = [
     description:
       "Soft coffee-infused sponge layered with light coffee cream — subtly sweet with a gentle coffee kick.",
     ingredients: `Refined flour, coffee decoction, fresh cream, sugar, vegetable oil, baking essentials. ${EGGLESS_NOTE}`,
-    images: ["/images/products/cakes/coffee-cake/1.jpg"],
+    images: ["/images/products/cakes/coffee-cake/2.jpg"],
     price: 290,
     weightOptions: weightOptionsFrom(290, 590),
     flavours: ["Coffee"],
@@ -550,7 +558,7 @@ export const products: Product[] = [
     description:
       "Rich sponge loaded with almonds, cashews, raisins and dates — a wholesome, nutty favourite.",
     ingredients: `Refined flour, mixed dry fruits (almonds, cashews, raisins, dates), fresh cream, sugar, vegetable oil, baking essentials. ${EGGLESS_NOTE}`,
-    images: ["/images/products/cakes/dry-fruit-cake/1.jpg"],
+    images: ["/images/products/cakes/dry-fruit-cake/2.jpg"],
     price: 450,
     weightOptions: weightOptionsFrom(450, 900),
     flavours: ["Dry Fruit"],
@@ -580,7 +588,7 @@ export const products: Product[] = [
     description:
       "Fragrant saffron sponge layered with pistachio cream — a festive, aromatic favourite.",
     ingredients: `Refined flour, saffron, pistachios, fresh cream, sugar, vegetable oil, baking essentials. ${EGGLESS_NOTE}`,
-    images: ["/images/products/cakes/kesar-pista-cake/1.jpg"],
+    images: ["/images/products/cakes/kesar-pista-cake/2.jpg"],
     price: 450,
     weightOptions: weightOptionsFrom(450, 900),
     flavours: ["Kesar Pista"],
@@ -595,7 +603,7 @@ export const products: Product[] = [
     description:
       "Fresh mango pulp folded into a soft vanilla sponge with mango cream — a seasonal favourite.",
     ingredients: `Refined flour, mango pulp, fresh cream, sugar, vegetable oil, baking essentials. ${EGGLESS_NOTE}`,
-    images: ["/images/products/cakes/mango-cake/1.jpg"],
+    images: ["/images/products/cakes/mango-cake/2.jpg"],
     price: 290,
     weightOptions: weightOptionsFrom(290, 590),
     flavours: ["Mango"],
@@ -640,7 +648,7 @@ export const products: Product[] = [
     description:
       "Soft vanilla sponge layered with fresh strawberry compote and light whipped cream.",
     ingredients: `Refined flour, strawberry compote, fresh cream, sugar, vegetable oil, baking essentials. ${EGGLESS_NOTE}`,
-    images: ["/images/products/cakes/strawberry-cake/1.jpg"],
+    images: ["/images/products/cakes/strawberry-cake/2.jpg"],
     price: 290,
     weightOptions: weightOptionsFrom(290, 590),
     flavours: ["Strawberry"],
@@ -655,7 +663,7 @@ export const products: Product[] = [
     description:
       "The classic Black Forest, reimagined in white — vanilla sponge, whipped cream, cherries and white chocolate shavings.",
     ingredients: `Refined flour, fresh cream, cherries, white chocolate shavings, sugar, vegetable oil, baking essentials. ${EGGLESS_NOTE}`,
-    images: ["/images/products/cakes/white-forest-cake/1.jpg"],
+    images: ["/images/products/cakes/white-forest-cake/2.jpg"],
     price: 290,
     weightOptions: weightOptionsFrom(290, 590),
     flavours: ["White Forest"],
