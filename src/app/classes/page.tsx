@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { FiClock } from "react-icons/fi";
 import Button from "@/components/ui/Button";
 import PageHero from "@/components/ui/PageHero";
+import LazyVideo from "@/components/ui/LazyVideo";
 import { business } from "@/data/business";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
 
@@ -25,6 +26,13 @@ export default function ClassesPage() {
       />
       <section className="bg-cream-light py-20 md:py-28">
         <div className="container-px max-w-xl mx-auto text-center">
+          <div className="relative mx-auto mb-10 w-56 sm:w-64 aspect-[9/16] rounded-[1.75rem] overflow-hidden ring-1 ring-gold/30 shadow-[0_30px_70px_-30px_rgba(31,20,17,0.55)]">
+            <LazyVideo
+              src="/video/classes-piping.mp4"
+              poster="/video/classes-piping.jpg"
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+          </div>
           <div className="w-16 h-16 mx-auto rounded-full bg-rose/15 text-rose flex items-center justify-center text-3xl mb-6">
             <FiClock />
           </div>
