@@ -18,6 +18,7 @@ import {
   FiLogOut,
   FiEdit3,
   FiBell,
+  FiStar,
 } from "react-icons/fi";
 import { requireRole } from "@/lib/auth/guards";
 import { signOutAction } from "@/lib/auth/actions";
@@ -27,6 +28,7 @@ const NAV = [
   { href: "/dashboard/owner", label: "Overview", icon: FiGrid },
   { href: "/dashboard/owner/orders", label: "Orders", icon: FiShoppingBag },
   { href: "/dashboard/owner/products", label: "Products", icon: FiBox },
+  { href: "/dashboard/owner/premium-cakes", label: "Premium Cakes", icon: FiStar },
   { href: "/dashboard/owner/categories", label: "Categories", icon: FiTag },
   { href: "/dashboard/owner/custom-cakes", label: "Custom Cakes", icon: FiEdit3 },
   { href: "/dashboard/owner/inventory", label: "Inventory", icon: FiPackage },

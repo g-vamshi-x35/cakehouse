@@ -442,3 +442,38 @@ export async function updateCustomCakeStatusAction(requestId: string, status: "a
   revalidatePath("/dashboard/employee/custom-cakes");
   revalidatePath("/account/notifications");
 }
+
+// ---------- Premium Cakes (owner-only price management) ----------
+
+export async function updatePremiumCakeAction(
+  cakeId: string,
+  _prevState: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  const { supabase } = await requireOwnerClient();
+
+  const rawPrice = String(formData.get("price") ?? "").trim();
+  const priceLabel = String(formData.get("priceLabel") ?? "").trim();
+  const isActive = formData.get("isActive") === "on";
+
+  let price: number | null = null;
+  if (rawPrice !== "") {
+    price = Number(rawPrice);
+    if (!Number.isFinite(price) || price <= 0 || price > 1_000_000) {
+      return { error: "Enter a valid price (a positive number), or leave it empty for “Price on request”." };
+    }
+    price = Math.round(price * 100) / 100;
+  }
+
+  const { error } = await supabase
+    .from("premium_cakes")
+    .update({ price, price_label: priceLabel || null, is_active: isActive, updated_at: new Date().toISOString() })
+    .eq("id", cakeId);
+  if (error) return { error: error.message };
+
+  await logActivity(price == null ? "Cleared premium cake price" : `Set premium cake price to ₹${price}`, "premium_cake", cakeId);
+  revalidatePath("/premium-cakes");
+  revalidatePath("/");
+  revalidatePath("/dashboard/owner/premium-cakes");
+  return { success: true };
+}

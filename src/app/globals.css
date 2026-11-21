@@ -7,6 +7,8 @@
   --color-brown: #894e3f;
   --color-brown-dark: #5e352a;
   --color-ink: #2b1a15;
+  --color-gold: #b08d57;
+  --color-espresso: #1f1411;
 }
 
 @theme inline {
@@ -16,6 +18,8 @@
   --color-brown: var(--color-brown);
   --color-brown-dark: var(--color-brown-dark);
   --color-ink: var(--color-ink);
+  --color-gold: var(--color-gold);
+  --color-espresso: var(--color-espresso);
 
   --font-heading: var(--font-playfair);
   --font-body: var(--font-lato);
