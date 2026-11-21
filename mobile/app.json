@@ -2,20 +2,40 @@
   "expo": {
     "name": "Cake House",
     "slug": "cakehouse",
+    "description": "Order fresh 100% eggless cakes, pizza and snacks from Cake House (Sri Marlapolama Bakery), Berhampur.",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "cakehouse",
     "userInterfaceStyle": "light",
+    "backgroundColor": "#f7eedb",
+    "primaryColor": "#c37960",
     "android": {
+      "package": "in.cakehousekmp.app",
       "adaptiveIcon": {
         "backgroundColor": "#f0d7a7",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
+      "permissions": ["android.permission.CAMERA", "android.permission.POST_NOTIFICATIONS", "android.permission.VIBRATE"],
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.SYSTEM_ALERT_WINDOW"
+      ],
+      "softwareKeyboardLayoutMode": "resize",
       "predictiveBackGestureEnabled": false,
-      "package": "in.cakehousekmp.app"
+      "allowBackup": false
+    },
+    "ios": {
+      "bundleIdentifier": "in.cakehousekmp.app",
+      "buildNumber": "1",
+      "supportsTablet": true,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "web": {
       "output": "single",
@@ -28,18 +48,31 @@
         {
           "backgroundColor": "#f7eedb",
           "image": "./assets/images/splash-icon.png",
-          "imageWidth": 140
+          "imageWidth": 180
         }
       ],
-      "expo-sqlite"
+      "expo-sqlite",
+      "@react-native-community/datetimepicker",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Cake House needs access to your photos so you can share a cake design you like.",
+          "cameraPermission": "Cake House needs the camera so you can photograph a cake design you like.",
+          "microphonePermission": false
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/notification-icon.png",
+          "color": "#c37960",
+          "defaultChannel": "orders"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    },
-    "ios": {
-      "bundleIdentifier": "in.cakehousekmp.app",
-      "supportsTablet": true
     }
   }
 }

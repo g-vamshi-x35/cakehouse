@@ -6,7 +6,7 @@ import { useAuth } from '@/lib/auth';
 import { callPhone, openWhatsApp } from '@/lib/business';
 import { formatDate, ORDER_STATUS_LABEL, PAYMENT_STATUS_LABEL, STATUS_STEPS, type OrderStatus, type PaymentStatus } from '@/lib/orders';
 import { supabase } from '@/lib/supabase';
-import { C } from '@/lib/theme';
+import { C, F } from '@/lib/theme';
 
 type Order = {
   id: string;
@@ -159,8 +159,8 @@ export default function StaffOrderScreen() {
 
 const styles = StyleSheet.create({
   wrap: { padding: 16, gap: 14, paddingBottom: 40, maxWidth: 700, width: '100%', alignSelf: 'center' },
-  title: { fontSize: 26, fontWeight: '800', color: C.brown },
-  muted: { color: C.muted, fontSize: 15 },
-  small: { color: C.muted, fontSize: 13 },
+  title: { fontSize: 26, fontFamily: F.heading, color: C.brown },
+  muted: { color: C.muted, fontSize: 15, fontFamily: F.body },
+  small: { color: C.muted, fontSize: 13, fontFamily: F.body },
   wrapRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
 });
