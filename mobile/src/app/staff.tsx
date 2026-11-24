@@ -1,12 +1,11 @@
-import { router, useFocusEffect } from 'expo-router';
+import { Redirect, router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button, Centered, Chip, StatusBadge } from '@/components/ui';
+import { Chip, LoadingState, StatusBadge } from '@/components/ui';
 import { useAuth } from '@/lib/auth';
 import { formatDate, PAYMENT_STATUS_LABEL, type OrderStatus, type PaymentStatus } from '@/lib/orders';
 import { supabase } from '@/lib/supabase';
-import { C, R } from '@/lib/theme';
+import { C, F, MAX_W, R } from '@/lib/theme';
 
 type OrderRow = {
   id: string;
@@ -59,20 +58,10 @@ export default function OrdersScreen() {
     }, [load])
   );
 
-  if (authLoading) return <Centered><Text style={styles.muted}>Loading…</Text></Centered>;
-
-  if (!session) {
-    return (
-      <SafeAreaView style={styles.page}>
-        <Centered>
-          <Text style={{ fontSize: 44 }}>🧁</Text>
-          <Text style={styles.title}>Your orders</Text>
-          <Text style={[styles.muted, { textAlign: 'center' }]}>Log in to see your orders here. Staff log in to open the dashboard.</Text>
-          <Button title="Log in" onPress={() => router.navigate('/account')} style={{ alignSelf: 'stretch' }} />
-        </Centered>
-      </SafeAreaView>
-    );
-  }
+  if (authLoading) return <LoadingState />;
+  // Customers use My Orders; this screen is the staff dashboard.
+  if (!session) return <Redirect href="/login" />;
+  if (!isStaff) return <Redirect href="/orders" />;
 
   const today = startOfToday().getTime();
   const shown = isStaff
@@ -84,7 +73,7 @@ export default function OrdersScreen() {
   const revenue = todays.reduce((s, o) => s + Number(o.total), 0);
 
   return (
-    <SafeAreaView style={styles.page} edges={['top']}>
+    <View style={styles.page}>
       <FlatList
         data={shown}
         keyExtractor={(o) => o.id}
@@ -92,7 +81,7 @@ export default function OrdersScreen() {
         refreshControl={<RefreshControl refreshing={false} onRefresh={load} tintColor={C.brown} />}
         ListHeaderComponent={
           <View style={{ gap: 12, marginBottom: 4 }}>
-            <Text style={styles.title}>{isStaff ? `${roleTitle(profile?.role)} Dashboard` : 'My Orders'}</Text>
+            <Text style={styles.title}>{`${roleTitle(profile?.role)} Dashboard`}</Text>
             {isStaff && profile?.role !== 'delivery' && (
               <View style={styles.stats}>
                 <Stat label="Today's orders" value={String(todays.length)} />
@@ -134,7 +123,7 @@ export default function OrdersScreen() {
           </Pressable>
         )}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -153,14 +142,14 @@ function Stat({ label, value }: { label: string; value: string }) {
 
 const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: C.page },
-  list: { padding: 16, gap: 10, maxWidth: 700, width: '100%', alignSelf: 'center' },
-  title: { fontSize: 26, fontWeight: '800', color: C.brown },
-  muted: { color: C.muted, fontSize: 15 },
-  small: { color: C.muted, fontSize: 13 },
-  card: { flexDirection: 'row', gap: 12, backgroundColor: C.creamLight, borderRadius: R.lg, padding: 14, borderCurve: 'continuous' },
-  num: { fontSize: 17, fontWeight: '800', color: C.ink },
-  total: { fontSize: 17, fontWeight: '800', color: C.brown, fontVariant: ['tabular-nums'] },
+  list: { padding: 16, gap: 10, maxWidth: MAX_W, width: '100%', alignSelf: 'center' },
+  title: { fontSize: 26, fontFamily: F.heading, color: C.brown },
+  muted: { color: C.muted, fontSize: 15, fontFamily: F.body },
+  small: { color: C.muted, fontSize: 13, fontFamily: F.body },
+  card: { flexDirection: 'row', gap: 12, backgroundColor: C.surface, borderRadius: R.lg, padding: 14, borderCurve: 'continuous', borderWidth: 1, borderColor: C.border },
+  num: { fontSize: 17, fontFamily: F.bodyBlack, color: C.ink },
+  total: { fontSize: 17, fontFamily: F.bodyBlack, color: C.brown, fontVariant: ['tabular-nums'] },
   stats: { flexDirection: 'row', gap: 8 },
-  stat: { flex: 1, backgroundColor: C.creamLight, borderRadius: R.md, padding: 12, gap: 2 },
-  statValue: { fontSize: 20, fontWeight: '800', color: C.brown, fontVariant: ['tabular-nums'] },
+  stat: { flex: 1, backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, borderRadius: R.md, padding: 12, gap: 2 },
+  statValue: { fontSize: 20, fontFamily: F.bodyBlack, color: C.brown, fontVariant: ['tabular-nums'] },
 });
