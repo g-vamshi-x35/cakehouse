@@ -10,7 +10,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from '@/components/ui';
 import { useAuth } from '@/lib/auth';
 import { business } from '@/lib/business';
-import { HERO, LOGO } from '@/lib/images';
+import { SiteVideo } from '@/components/site-video';
+import { LOGO } from '@/lib/images';
 import { C, F } from '@/lib/theme';
 
 export default function WelcomeScreen() {
@@ -28,7 +29,7 @@ export default function WelcomeScreen() {
     <View style={styles.page}>
       <StatusBar style="light" />
       <Animated.View style={[StyleSheet.absoluteFill, heroStyle]}>
-        <Image source={HERO} style={StyleSheet.absoluteFill} contentFit="cover" contentPosition={{ left: '62%', top: '30%' }} alt="" />
+        <SiteVideo name="hero-berry-cake" style={StyleSheet.absoluteFill} />
       </Animated.View>
       <LinearGradient
         colors={['rgba(43,26,21,0.15)', 'rgba(43,26,21,0.5)', 'rgba(43,26,21,0.94)']}
@@ -93,7 +94,7 @@ const styles = StyleSheet.create({
     boxShadow: '0 10px 30px rgba(0,0,0,0.35)',
   },
   logo: { width: 96, height: 96, borderRadius: 48 },
-  eyebrow: { color: C.cream, fontFamily: F.bodyBold, fontSize: 12, letterSpacing: 3.6, textTransform: 'uppercase' },
+  eyebrow: { color: C.gold, fontFamily: F.bodyBold, fontSize: 12, letterSpacing: 3.6, textTransform: 'uppercase' },
   title: { color: C.white, fontFamily: F.heading, fontSize: 38, lineHeight: 44 },
   sub: { color: 'rgba(238,225,186,0.9)', fontFamily: F.body, fontSize: 15, lineHeight: 23 },
   badges: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },

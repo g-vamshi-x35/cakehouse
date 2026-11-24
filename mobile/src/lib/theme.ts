@@ -11,6 +11,12 @@ export const C = {
   brown: '#894e3f',
   brownDark: '#5e352a',
   ink: '#2b1a15',
+  // Luxury palette added in the website's premium redesign.
+  gold: '#b08d57',
+  goldSoft: 'rgba(176, 141, 87, 0.18)',
+  goldLine: 'rgba(176, 141, 87, 0.35)',
+  espresso: '#1f1411',
+  espressoSoft: '#2c1d18',
   muted: '#7a6259',
   faint: 'rgba(43, 26, 21, 0.38)',
   white: '#ffffff',

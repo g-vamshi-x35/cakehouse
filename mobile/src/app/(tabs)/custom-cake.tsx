@@ -10,7 +10,8 @@ import { DateField } from '@/components/date-field';
 import { Button, Card, Chip, Field, Notice, QtyStepper, SectionTitle } from '@/components/ui';
 import { useAuth } from '@/lib/auth';
 import { business, openWhatsApp } from '@/lib/business';
-import { MENU_IMAGES } from '@/lib/images';
+import { SiteVideo } from '@/components/site-video';
+import { imageSource } from '@/lib/images';
 import { supabase } from '@/lib/supabase';
 import { C, F, MAX_W, R } from '@/lib/theme';
 import { pickImage, uploadCustomCakeImage, type PickedImage } from '@/lib/upload';
@@ -21,6 +22,7 @@ const SHAPES = ['Round', 'Square', 'Heart', 'Number / Letter', 'Custom Sculpted'
 const SIZES = ['0.5 kg', '1 kg', '1.5 kg', '2 kg', '3 kg+'];
 const FLAVOURS = ['Vanilla', 'Chocolate', 'Butterscotch', 'Black Forest', 'Red Velvet', 'Pineapple'];
 const CREAMS = ['Whipped Cream', 'Fondant', 'Buttercream', 'Ganache'];
+const IDEAS = ['Fresh berries & drip finishes', 'Hand-piped rosettes in your colours', 'Names, ages & messages in cream', 'Cartoon, princess & theme toppers'];
 
 export default function CustomCakeScreen() {
   const params = useLocalSearchParams<{ theme?: string }>();
@@ -149,13 +151,28 @@ export default function CustomCakeScreen() {
         <ScrollView contentContainerStyle={styles.wrap} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
           <AppHeader title="Custom Cake" subtitle="Designed exactly how you imagine" />
 
+          {/* Website's "Your Idea, Our Hands" inspiration section */}
           <Animated.View entering={FadeInDown.duration(500)} style={styles.intro}>
-            <Image source={MENU_IMAGES.doraemon} style={styles.introImg} contentFit="cover" alt="" />
-            <View style={{ flex: 1, gap: 4 }}>
-              <Text style={styles.eyebrow}>Made to order</Text>
-              <Text style={styles.introTitle}>Design Your Dream Cake</Text>
-              <Text style={styles.introBody}>Share your idea and a photo. We’ll review it and send you a quote for approval.</Text>
+            <Text style={styles.eyebrow}>Inspiration</Text>
+            <Text style={styles.introTitle}>
+              Your Idea, <Text style={styles.introGold}>Our Hands</Text>
+            </Text>
+            <Text style={styles.introBody}>
+              Tell us the occasion and the feeling — we’ll design the colours, decorations and details to make it unforgettable.
+            </Text>
+            <View style={styles.introMedia}>
+              <SiteVideo name="custom-decorating" style={styles.introVideo} />
+              <Image source={imageSource('/images/stylish/berry-decorating.jpg')} style={[styles.introVideo, { marginTop: 26 }]} contentFit="cover" alt="Decorating a celebration cake with fresh berries" />
             </View>
+            <View style={{ gap: 8 }}>
+              {IDEAS.map((idea) => (
+                <View key={idea} style={styles.idea}>
+                  <View style={styles.ideaLine} />
+                  <Text style={styles.ideaText}>{idea}</Text>
+                </View>
+              ))}
+            </View>
+            <Text style={styles.introNote}>Share your idea below — we’ll review it and send you a quote for approval.</Text>
           </Animated.View>
 
           <SectionTitle eyebrow="Your details">Contact</SectionTitle>
@@ -282,11 +299,17 @@ function UploadTile({ icon, label, onPress }: { icon: 'images-outline' | 'camera
 const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: C.page },
   wrap: { padding: 16, paddingBottom: 40, gap: 16, maxWidth: MAX_W, width: '100%', alignSelf: 'center' },
-  intro: { flexDirection: 'row', gap: 14, backgroundColor: C.brown, borderRadius: R.xl, padding: 12, alignItems: 'center' },
-  introImg: { width: 96, height: 112, borderRadius: R.lg },
-  eyebrow: { fontFamily: F.bodyBold, fontSize: 10.5, letterSpacing: 2.4, color: C.cream, textTransform: 'uppercase' },
-  introTitle: { fontFamily: F.heading, fontSize: 20, color: C.white },
-  introBody: { fontFamily: F.body, fontSize: 13, color: C.creamLight, lineHeight: 18 },
+  intro: { backgroundColor: C.espresso, borderRadius: R.xl, padding: 20, gap: 12 },
+  eyebrow: { fontFamily: F.bodyBold, fontSize: 11, letterSpacing: 4, color: C.gold, textTransform: 'uppercase' },
+  introTitle: { fontFamily: F.heading, fontSize: 30, color: C.cream, lineHeight: 36 },
+  introGold: { color: C.gold, fontFamily: F.headingItalic },
+  introBody: { fontFamily: F.body, fontSize: 14, color: 'rgba(238,225,186,0.78)', lineHeight: 21 },
+  introMedia: { flexDirection: 'row', gap: 12, marginVertical: 6 },
+  introVideo: { flex: 1, aspectRatio: 9 / 16, maxHeight: 300, borderRadius: R.xl, borderWidth: 1, borderColor: 'rgba(176,141,87,0.3)' },
+  idea: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  ideaLine: { width: 22, height: 1, backgroundColor: C.gold },
+  ideaText: { fontFamily: F.body, fontSize: 14, color: 'rgba(240,215,167,0.92)' },
+  introNote: { fontFamily: F.headingItalic, fontSize: 13.5, color: C.gold, marginTop: 4 },
   label: { color: C.brownDark, fontFamily: F.bodyBold, fontSize: 13.5 },
   hint: { color: C.muted, fontFamily: F.body, fontSize: 12.5 },
   wrapRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },

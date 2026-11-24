@@ -1,3 +1,4 @@
+import { BROWSE_TAGS, PRODUCT_TAGS } from './site-data';
 import { supabase } from './supabase';
 
 export type WeightOption = { label: string; price: number };
@@ -23,6 +24,8 @@ export type Product = {
   reviewCount: number;
   image: string | null;
   images: string[];
+  /** Website browse tags (birthday-cakes, new-arrivals, …) — see src/lib/site-data.ts. */
+  tags: string[];
 };
 
 export type Category = { slug: string; name: string };
@@ -96,6 +99,7 @@ function mapRow(r: Row): Product {
     reviewCount: Number(r.review_count ?? 0),
     image: images[0] ?? null,
     images,
+    tags: PRODUCT_TAGS[r.slug] ?? [],
   };
 }
 
@@ -128,6 +132,16 @@ export async function fetchProduct(id: string): Promise<Product | null> {
   const { data, error } = await supabase.from('products').select(SELECT).eq('id', id).maybeSingle();
   if (error) throw error;
   return data ? mapRow(data as unknown as Row) : null;
+}
+
+export function tagLabel(tag: string) {
+  return BROWSE_TAGS[tag] ?? tag;
+}
+
+/** Tags that are actually on at least one product (same rule as the website). */
+export function activeTags(list: Product[]) {
+  const set = new Set(list.flatMap((p) => p.tags));
+  return Object.keys(BROWSE_TAGS).filter((t) => set.has(t) && t !== 'eggless-cakes');
 }
 
 export function priceText(p: Product) {

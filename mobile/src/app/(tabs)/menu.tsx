@@ -1,14 +1,17 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useLocalSearchParams } from 'expo-router';
+import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, TextInput, View, useWindowDimensions } from 'react-native';
+import { FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppHeader } from '@/components/app-header';
 import { CartBar } from '@/components/cart-bar';
 import { ProductCard } from '@/components/product-card';
-import { Chip, EmptyState, ErrorState, Skeleton } from '@/components/ui';
-import { CATEGORIES, fetchProducts, type Product } from '@/lib/products';
+import { Chip, EmptyState, ErrorState, Skeleton, tap } from '@/components/ui';
+import { imageSource } from '@/lib/images';
+import { activeTags, CATEGORIES, fetchProducts, tagLabel, type Product } from '@/lib/products';
 import { C, F, MAX_W, R } from '@/lib/theme';
 
 type Sort = 'featured' | 'low' | 'high' | 'rating';
@@ -20,10 +23,11 @@ const SORTS: { key: Sort; label: string }[] = [
 ];
 
 export default function MenuScreen() {
-  const params = useLocalSearchParams<{ category?: string }>();
+  const params = useLocalSearchParams<{ category?: string; tag?: string }>();
   const [products, setProducts] = useState<Product[] | null>(null);
   const [error, setError] = useState('');
   const [category, setCategory] = useState(params.category ?? 'all');
+  const [tag, setTag] = useState<string | null>(params.tag ?? null);
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState<Sort>('featured');
   const [refreshing, setRefreshing] = useState(false);
@@ -31,10 +35,16 @@ export default function MenuScreen() {
   const cardW = (Math.min(width, MAX_W) - 16 * 2 - 12) / 2;
 
   // Category chosen on the Home screen.
-  const [lastParam, setLastParam] = useState(params.category);
-  if (params.category !== lastParam) {
-    setLastParam(params.category);
+  // Category / occasion chosen on the Home screen.
+  const paramKey = `${params.category ?? ''}|${params.tag ?? ''}`;
+  const [lastParam, setLastParam] = useState(paramKey);
+  if (paramKey !== lastParam) {
+    setLastParam(paramKey);
     if (params.category) setCategory(params.category);
+    if (params.tag) {
+      setTag(params.tag);
+      setCategory('all');
+    } else if (params.category) setTag(null);
   }
 
   const load = useCallback(
@@ -58,13 +68,19 @@ export default function MenuScreen() {
     const list = (products ?? []).filter(
       (p) =>
         (category === 'all' || p.categorySlug === category) &&
+        (!tag || p.tags.includes(tag)) &&
         (!q || p.name.toLowerCase().includes(q) || p.description.toLowerCase().includes(q) || p.flavours.some((f) => f.toLowerCase().includes(q)))
     );
     if (sort === 'low') return [...list].sort((a, b) => a.price - b.price);
     if (sort === 'high') return [...list].sort((a, b) => b.price - a.price);
     if (sort === 'rating') return [...list].sort((a, b) => b.avgRating - a.avgRating || b.reviewCount - a.reviewCount);
     return list;
-  }, [products, category, query, sort]);
+  }, [products, category, tag, query, sort]);
+  const occasions = useMemo(() => {
+    const list = activeTags(products ?? []);
+    // Keep the active occasion visible at the start of the row.
+    return tag ? [tag, ...list.filter((t) => t !== tag)] : list;
+  }, [products, tag]);
 
   const header = (
     <View style={{ gap: 14, paddingBottom: 4 }}>
@@ -87,11 +103,64 @@ export default function MenuScreen() {
           </Pressable>
         ) : null}
       </View>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Open the premium cake collection"
+        onPress={() => {
+          tap();
+          router.push('/premium');
+        }}
+        style={({ pressed }) => [styles.premium, pressed && { transform: [{ scale: 0.98 }] }]}>
+        <Image source={imageSource('/images/premium/ferrero-rocher-cake/1.jpg')} style={styles.premiumImg} contentFit="cover" alt="" />
+        <LinearGradient start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }} colors={[C.espresso, 'rgba(31,20,17,0.85)', 'rgba(31,20,17,0.1)']} style={StyleSheet.absoluteFill} />
+        <View style={{ padding: 16, gap: 2, maxWidth: '70%' }}>
+          <Text style={styles.premiumEyebrow}>The Premium Collection</Text>
+          <Text style={styles.premiumTitle}>
+            Cakes Worth <Text style={{ color: C.gold, fontFamily: F.headingItalic }}>Celebrating</Text>
+          </Text>
+          <Text style={styles.premiumLink}>30 signature cakes →</Text>
+        </View>
+      </Pressable>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips} style={styles.bleed}>
         {CATEGORIES.map((c) => (
           <Chip key={c.slug} label={c.name} selected={category === c.slug} onPress={() => setCategory(c.slug)} />
         ))}
       </ScrollView>
+      {occasions.length > 0 && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips} style={styles.bleed}>
+          {occasions.map((t) => (
+            <Pressable
+              key={t}
+              onPress={() => {
+                tap();
+                setTag(tag === t ? null : t);
+              }}
+              style={[styles.occ, tag === t && styles.occOn]}
+              accessibilityRole="button"
+              accessibilityState={{ selected: tag === t }}>
+              <Text style={[styles.occText, tag === t && { color: C.cream }]}>{tagLabel(t)}</Text>
+              {tag === t ? <Ionicons name="close" size={13} color={C.cream} /> : null}
+            </Pressable>
+          ))}
+        </ScrollView>
+      )}
+      {tag || query ? (
+        <View style={styles.resultRow}>
+          <Text style={styles.resultText}>
+            {shown.length} {shown.length === 1 ? 'item' : 'items'}
+            {tag ? <Text style={{ fontFamily: F.bodyBlack, color: C.brown }}> · {tagLabel(tag)}</Text> : null}
+          </Text>
+          <Pressable
+            onPress={() => {
+              setTag(null);
+              setQuery('');
+            }}
+            hitSlop={8}
+            accessibilityRole="button">
+            <Text style={styles.resultClear}>Clear filters</Text>
+          </Pressable>
+        </View>
+      ) : null}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips} style={styles.bleed}>
         {SORTS.map((s) => (
           <Pressable key={s.key} onPress={() => setSort(s.key)} style={[styles.sort, sort === s.key && styles.sortOn]} accessibilityRole="button" accessibilityState={{ selected: sort === s.key }}>
@@ -144,6 +213,7 @@ export default function MenuScreen() {
               onAction={() => {
                 setQuery('');
                 setCategory('all');
+                setTag(null);
               }}
             />
           }
@@ -188,5 +258,16 @@ const styles = StyleSheet.create({
   sort: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: R.pill },
   sortOn: { backgroundColor: C.roseSoft },
   sortText: { fontFamily: F.bodyBold, fontSize: 13, color: C.muted },
+  premium: { height: 112, borderRadius: R.xl, overflow: 'hidden', backgroundColor: C.espresso, justifyContent: 'center' },
+  premiumImg: { position: 'absolute', right: 0, top: 0, bottom: 0, width: '55%' },
+  premiumEyebrow: { color: C.gold, fontFamily: F.bodyBold, fontSize: 10, letterSpacing: 2.6, textTransform: 'uppercase' },
+  premiumTitle: { color: C.cream, fontFamily: F.heading, fontSize: 20, lineHeight: 26 },
+  premiumLink: { color: 'rgba(240,215,167,0.85)', fontFamily: F.bodyBold, fontSize: 12.5, marginTop: 2 },
+  occ: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 7, borderRadius: R.pill, borderWidth: 1, borderColor: C.goldLine, backgroundColor: 'rgba(255,255,255,0.6)' },
+  occOn: { backgroundColor: C.espresso, borderColor: C.espresso },
+  occText: { fontFamily: F.bodyBold, fontSize: 12.5, color: C.brown },
+  resultRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  resultText: { fontFamily: F.body, fontSize: 13.5, color: C.muted },
+  resultClear: { fontFamily: F.bodyBold, fontSize: 13.5, color: C.rose },
   skeletons: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
 });

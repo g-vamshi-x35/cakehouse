@@ -81,6 +81,7 @@ function RootStack() {
       <Stack.Screen name="register/success" options={{ headerShown: false, gestureEnabled: false, animation: 'fade' }} />
       <Stack.Screen name="login" options={{ title: '' }} />
       <Stack.Screen name="product/[id]" options={{ title: '', headerTransparent: true }} />
+      <Stack.Screen name="premium" options={{ title: '', headerTransparent: true, headerTintColor: C.cream }} />
       <Stack.Screen name="cart" options={{ title: 'Your Cart' }} />
       <Stack.Screen name="checkout" options={{ title: 'Checkout' }} />
       <Stack.Screen name="order-placed/[id]" options={{ headerShown: false, gestureEnabled: false, animation: 'fade' }} />
