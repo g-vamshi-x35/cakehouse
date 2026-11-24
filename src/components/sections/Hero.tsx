@@ -5,7 +5,7 @@ import gsap from "gsap";
 import Button from "@/components/ui/Button";
 import { FiArrowDown } from "react-icons/fi";
 
-const HERO_VIDEO = "/video/hero.mp4";
+const HERO_VIDEO = "/video/hero-berry-cake.mp4";
 
 export default function Hero() {
   const rootRef = useRef<HTMLDivElement>(null);
@@ -59,7 +59,7 @@ export default function Hero() {
           loop
           playsInline
           aria-hidden="true"
-          className="absolute inset-0 w-full h-full object-cover object-[65%_30%]"
+          className="absolute inset-0 w-full h-full object-cover object-[60%_50%]"
         />
       </div>
       <div className="absolute inset-0 bg-gradient-to-t from-ink/85 via-ink/45 to-ink/20" />

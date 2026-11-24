@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import PageHero from "@/components/ui/PageHero";
 import CustomCakeForm from "@/components/sections/CustomCakeForm";
+import CustomInspiration from "@/components/sections/CustomInspiration";
 
 export const metadata: Metadata = {
   title: "Design a Custom Cake | Cake House",
@@ -15,6 +16,7 @@ export default function CustomCakePage() {
         title="Design Your Dream Cake"
         subtitle="Pick a shape, size, flavour and theme — upload an inspiration photo if you have one — and we'll get back to you with a custom quote."
       />
+      <CustomInspiration />
       <section className="bg-cream-light py-16 md:py-20">
         <div className="container-px">
           <CustomCakeForm />
