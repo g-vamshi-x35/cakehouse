@@ -17,6 +17,8 @@ import { supabase } from './supabase';
 export type AppNotification = { id: string; title: string; body: string | null; type: string | null; is_read: boolean; created_at: string };
 
 const POLL_MS = 45_000;
+/** Android channel used for the staff new-order bell (custom sound, max priority). */
+export const NEW_ORDER_CHANNEL = 'new-orders';
 const isNative = Platform.OS !== 'web';
 
 if (isNative) {
@@ -38,6 +40,13 @@ export async function ensureNotificationPermission() {
         name: 'Order updates',
         importance: AndroidImportance.HIGH,
         lightColor: '#c37960',
+      });
+      await Notifications.setNotificationChannelAsync(NEW_ORDER_CHANNEL, {
+        name: 'New orders (staff)',
+        importance: AndroidImportance.MAX,
+        sound: 'new_order.wav',
+        vibrationPattern: [0, 400, 200, 400],
+        lightColor: '#b08d57',
       });
     }
     const current = await Notifications.getPermissionsAsync();
@@ -99,9 +108,15 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     const sub = AppState.addEventListener('change', (s) => {
       if (s === 'active') check();
     });
+    // Instant: the bakery's messages arrive the moment staff update an order.
+    const channel = supabase
+      .channel(`my-notifications-${userId}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` }, () => check())
+      .subscribe();
     return () => {
       clearInterval(timer);
       sub.remove();
+      supabase.removeChannel(channel);
     };
   }, [userId, check]);
 

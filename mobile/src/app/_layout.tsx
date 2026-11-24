@@ -15,6 +15,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { CartProvider } from '@/lib/cart';
 import { NotificationsProvider } from '@/lib/notifications';
+import { StaffAlertsProvider } from '@/lib/staff-alerts';
 import { C, F } from '@/lib/theme';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -36,7 +37,7 @@ export default function RootLayout() {
         <CartProvider>
           <NotificationsProvider>
             <StatusBar style="dark" />
-            {fontsLoaded || fontError ? <RootStack /> : null}
+            <StaffAlertsProvider>{fontsLoaded || fontError ? <RootStack /> : null}</StaffAlertsProvider>
           </NotificationsProvider>
         </CartProvider>
       </AuthProvider>
@@ -86,7 +87,7 @@ function RootStack() {
       <Stack.Screen name="checkout" options={{ title: 'Checkout' }} />
       <Stack.Screen name="order-placed/[id]" options={{ headerShown: false, gestureEnabled: false, animation: 'fade' }} />
       <Stack.Screen name="orders/index" options={{ title: 'My Orders' }} />
-      <Stack.Screen name="orders/[id]" options={{ title: 'Order Details' }} />
+      <Stack.Screen name="orders/[id]" options={{ title: 'Track Order' }} />
       <Stack.Screen name="profile" options={{ title: 'Personal Details' }} />
       <Stack.Screen name="addresses" options={{ title: 'Saved Addresses' }} />
       <Stack.Screen name="notifications" options={{ title: 'Notifications' }} />

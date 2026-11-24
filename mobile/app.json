@@ -70,10 +70,12 @@
         {
           "icon": "./assets/images/notification-icon.png",
           "color": "#c37960",
+          "sounds": ["./assets/sounds/new_order.wav"],
           "defaultChannel": "orders"
         }
       ],
-      "expo-video"
+      "expo-video",
+      "expo-audio"
     ],
     "experiments": {
       "typedRoutes": true,

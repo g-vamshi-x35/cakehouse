@@ -7,10 +7,9 @@ import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View, use
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, Chip, ErrorState, Field, IconButton, LoadingState, Notice, QtyStepper, SectionTitle } from '@/components/ui';
-import { business, openWhatsApp } from '@/lib/business';
 import { useCart } from '@/lib/cart';
 import { imageSource, placeholderEmoji } from '@/lib/images';
-import { fetchProduct, fetchProductReviews, type Product, type Review } from '@/lib/products';
+import { fetchProduct, type Product } from '@/lib/products';
 import { C, F, MAX_W, R, SHADOW } from '@/lib/theme';
 
 export default function ProductScreen() {
@@ -21,7 +20,6 @@ export default function ProductScreen() {
   const cart = useCart();
 
   const [product, setProduct] = useState<Product | null | undefined>(undefined);
-  const [reviews, setReviews] = useState<Review[]>([]);
   const [error, setError] = useState('');
   const [weight, setWeight] = useState<string | null>(null);
   const [flavour, setFlavour] = useState<string | null>(null);
@@ -39,7 +37,6 @@ export default function ProductScreen() {
         if (p?.flavours.length) setFlavour(p.flavours[0]);
       })
       .catch(() => setError("Couldn't load this item. Check your connection and try again."));
-    fetchProductReviews(id).then(setReviews).catch(() => {});
   }, [id]);
 
   useEffect(load, [load]);
@@ -144,12 +141,6 @@ export default function ProductScreen() {
           </View>
 
           {product.description ? <Text style={styles.desc}>{product.description}</Text> : null}
-          {product.ingredients ? (
-            <Text style={styles.ingredients}>
-              <Text style={{ fontFamily: F.bodyBold }}>Ingredients: </Text>
-              {product.ingredients}
-            </Text>
-          ) : null}
 
           {product.isCustomCake ? (
             <Animated.View entering={FadeInDown.duration(400)} style={{ gap: 12 }}>
@@ -203,32 +194,6 @@ export default function ProductScreen() {
               </View>
             </>
           )}
-
-          <Button
-            title="Ask about this on WhatsApp"
-            icon="logo-whatsapp"
-            variant="outline"
-            onPress={() => openWhatsApp(`Hi ${business.name}! I have a question about the ${product.name}.`)}
-          />
-
-          <View style={{ gap: 10 }}>
-            <SectionTitle eyebrow="Reviews">What customers say</SectionTitle>
-            {reviews.length === 0 ? (
-              <Text style={styles.muted}>No reviews yet — be the first to try it!</Text>
-            ) : (
-              reviews.map((r) => (
-                <View key={r.id} style={styles.review}>
-                  <View style={{ flexDirection: 'row', gap: 2 }}>
-                    {[1, 2, 3, 4, 5].map((s) => (
-                      <Ionicons key={s} name={s <= r.rating ? 'star' : 'star-outline'} size={13} color="#e0a526" />
-                    ))}
-                  </View>
-                  {r.comment ? <Text style={styles.reviewText}>{r.comment}</Text> : null}
-                  <Text style={styles.reviewAuthor}>{r.author}</Text>
-                </View>
-              ))
-            )}
-          </View>
         </Animated.View>
       </ScrollView>
 

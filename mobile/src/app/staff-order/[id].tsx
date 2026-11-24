@@ -4,7 +4,7 @@ import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Button, Card, Centered, Chip, Row, SectionTitle, StatusBadge } from '@/components/ui';
 import { useAuth } from '@/lib/auth';
 import { callPhone, openWhatsApp } from '@/lib/business';
-import { formatDate, ORDER_STATUS_LABEL, PAYMENT_STATUS_LABEL, STATUS_STEPS, type OrderStatus, type PaymentStatus } from '@/lib/orders';
+import { CUSTOMER_MESSAGE, formatDate, ORDER_STATUS_LABEL, PAYMENT_STATUS_LABEL, STATUS_STEPS, type OrderStatus, type PaymentStatus } from '@/lib/orders';
 import { supabase } from '@/lib/supabase';
 import { C, F } from '@/lib/theme';
 
@@ -139,7 +139,7 @@ export default function StaffOrderScreen() {
             selected={order.order_status === s}
             onPress={() =>
               s !== order.order_status &&
-              update({ order_status: s }, { title: `Order #${order.order_number}: ${ORDER_STATUS_LABEL[s]}`, body: `Your order is now ${ORDER_STATUS_LABEL[s].toLowerCase()}.` })
+              update({ order_status: s }, { title: `Order #${order.order_number}: ${ORDER_STATUS_LABEL[s]}`, body: CUSTOMER_MESSAGE[s] })
             }
           />
         ))}

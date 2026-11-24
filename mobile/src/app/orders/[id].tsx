@@ -2,43 +2,97 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
-import { Button, Card, Divider, ErrorState, LoadingState, Notice, PaymentBadge, Row, SectionTitle, StatusBadge } from '@/components/ui';
+import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
+import { Button, Card, Divider, ErrorState, LoadingState, Row, type IconName } from '@/components/ui';
+import { useAuth } from '@/lib/auth';
 import { business, callPhone, openWhatsApp } from '@/lib/business';
 import { useCart } from '@/lib/cart';
-import { fetchOrder, formatDate, formatTime, PROGRESS, type OrderDetail } from '@/lib/orders';
+import { fetchOrder, formatDate, formatTime, PROGRESS, type OrderDetail, type OrderStatus } from '@/lib/orders';
 import { fetchProducts } from '@/lib/products';
-import { C, F, MAX_W } from '@/lib/theme';
+import { supabase } from '@/lib/supabase';
+import { C, F, MAX_W, R } from '@/lib/theme';
 
-export default function OrderDetailScreen() {
+const REFRESH_MS = 20_000;
+
+const STATUS_VIEW: Record<OrderStatus, { icon: IconName; title: string }> = {
+  pending: { icon: 'time-outline', title: 'Order received' },
+  confirmed: { icon: 'checkmark-done-outline', title: 'Order confirmed' },
+  baking: { icon: 'flame-outline', title: 'Your order is baking' },
+  ready: { icon: 'gift-outline', title: 'Packed & ready' },
+  out_for_delivery: { icon: 'bicycle-outline', title: 'On the way to you' },
+  delivered: { icon: 'happy-outline', title: 'Delivered — enjoy!' },
+  cancelled: { icon: 'close-circle-outline', title: 'Order cancelled' },
+};
+
+type Update = { id: string; title: string; body: string | null; created_at: string };
+
+function when(iso: string) {
+  const d = new Date(iso);
+  return `${d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}, ${d.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' })}`;
+}
+
+export default function TrackOrderScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { session } = useAuth();
   const cart = useCart();
   const [order, setOrder] = useState<OrderDetail | null | undefined>(undefined);
+  const [updates, setUpdates] = useState<Update[]>([]);
   const [error, setError] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [reorderMsg, setReorderMsg] = useState('');
 
   const load = useCallback(async () => {
     try {
-      setOrder(await fetchOrder(id));
+      const o = await fetchOrder(id);
+      setOrder(o);
       setError('');
+      // The bakery's messages about this order (same notifications the website sends).
+      if (o && session) {
+        const { data } = await supabase
+          .from('notifications')
+          .select('id, title, body, created_at')
+          .eq('user_id', session.user.id)
+          .or(`title.ilike.%${o.order_number}%,body.ilike.%${o.order_number}%`)
+          .order('created_at', { ascending: true });
+        setUpdates((data as Update[] | null) ?? []);
+        await supabase
+          .from('notifications')
+          .update({ is_read: true })
+          .eq('user_id', session.user.id)
+          .eq('is_read', false)
+          .or(`title.ilike.%${o.order_number}%,body.ilike.%${o.order_number}%`);
+      }
     } catch {
       setError("Couldn't load this order. Check your connection and try again.");
     }
-  }, [id]);
+  }, [id, session]);
 
+  // Live tracking: refresh while this screen is open.
   useFocusEffect(
     useCallback(() => {
       load();
-    }, [load])
+      const t = setInterval(load, REFRESH_MS);
+      // Instant: refresh the moment staff change this order.
+      const channel = supabase
+        .channel(`track-${id}`)
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders', filter: `id=eq.${id}` }, () => load())
+        .subscribe();
+      return () => {
+        clearInterval(t);
+        supabase.removeChannel(channel);
+      };
+    }, [load, id])
   );
 
   if (error && order === undefined) return <ErrorState message={error} onRetry={load} />;
-  if (order === undefined) return <LoadingState />;
+  if (order === undefined) return <LoadingState text="Loading your order…" />;
   if (order === null) return <ErrorState message="We couldn't find this order." />;
 
   const cancelled = order.order_status === 'cancelled';
   const step = PROGRESS.findIndex((p) => p.status === order.order_status);
+  const view = STATUS_VIEW[order.order_status] ?? STATUS_VIEW.pending;
+  const hint = PROGRESS[step]?.hint;
+  const deliverAt = order.event_date ? `${formatDate(order.event_date)}${order.event_time ? `, ${formatTime(order.event_time)}` : ''}` : null;
 
   async function reorder() {
     if (!order) return;
@@ -82,19 +136,46 @@ export default function OrderDetailScreen() {
           }}
         />
       }>
-      <Animated.View entering={FadeInDown.duration(400)} style={styles.head}>
-        <View style={{ flex: 1, gap: 4 }}>
-          <Text style={styles.num}>Order #{order.order_number}</Text>
-          <Text style={styles.muted}>Placed on {formatDate(order.created_at)}</Text>
+      {/* Live status */}
+      <Animated.View entering={FadeInDown.duration(450)} style={[styles.status, cancelled && { backgroundColor: C.red }]}>
+        <View style={styles.statusTop}>
+          <View style={styles.statusIcon}>
+            <Ionicons name={view.icon} size={28} color={cancelled ? C.red : C.espresso} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.statusNum}>Order #{order.order_number}</Text>
+            <Text style={styles.statusTitle}>{view.title}</Text>
+            {hint && !cancelled ? <Text style={styles.statusHint}>{hint}</Text> : null}
+          </View>
         </View>
-        <StatusBadge status={order.order_status} />
+        {!cancelled ? (
+          <>
+            <View style={styles.bar} accessibilityLabel={`Step ${step + 1} of ${PROGRESS.length}`}>
+              {PROGRESS.map((p, i) => (
+                <View key={p.status} style={[styles.barSeg, i <= step && styles.barOn]} />
+              ))}
+            </View>
+            <View style={styles.barLabels}>
+              <Text style={styles.barLabel}>Placed</Text>
+              <Text style={styles.barLabel}>Baking</Text>
+              <Text style={styles.barLabel}>Delivered</Text>
+            </View>
+          </>
+        ) : null}
+        {deliverAt && !cancelled ? (
+          <View style={styles.deliver}>
+            <Ionicons name="calendar-outline" size={15} color={C.gold} />
+            <Text style={styles.deliverText}>Delivery: {deliverAt}</Text>
+          </View>
+        ) : null}
       </Animated.View>
 
+      {/* Advance payment reminder */}
       {order.payment_status === 'advance_pending' && !cancelled ? (
         <Card style={{ backgroundColor: C.amberBg, borderColor: 'rgba(154,107,0,0.25)' }}>
-          <Text style={styles.payTitle}>Advance payment pending</Text>
+          <Text style={styles.payTitle}>Pay ₹{order.advance_amount} advance to confirm</Text>
           <Text style={styles.payBody}>
-            Pay ₹{order.advance_amount} with GPay / PhonePe / Paytm UPI to {business.phones[0]}, then send your order number on WhatsApp.
+            GPay / PhonePe / Paytm to {business.phones[0]}, then tell us on WhatsApp.
           </Text>
           <Button
             title="I've paid · Tell us on WhatsApp"
@@ -106,36 +187,38 @@ export default function OrderDetailScreen() {
         </Card>
       ) : null}
 
-      <Card>
-        <SectionTitle>Order status</SectionTitle>
-        {cancelled ? (
-          <Notice tone="error" text="This order was cancelled. Contact us if you have any questions." />
-        ) : (
-          <View style={{ marginTop: 4 }}>
-            {PROGRESS.map((p, i) => {
-              const done = i <= step;
-              const current = i === step;
-              return (
-                <View key={p.status} style={styles.step}>
-                  <View style={{ alignItems: 'center' }}>
-                    <View style={[styles.dot, done && styles.dotDone, current && styles.dotCurrent]}>
-                      {done ? <Ionicons name="checkmark" size={13} color={C.white} /> : null}
-                    </View>
-                    {i < PROGRESS.length - 1 ? <View style={[styles.line, i < step && { backgroundColor: C.rose }]} /> : null}
-                  </View>
-                  <View style={{ flex: 1, paddingBottom: 14 }}>
-                    <Text style={[styles.stepLabel, !done && { color: C.faint }]}>{p.label}</Text>
-                    {current ? <Text style={styles.stepHint}>{p.hint}</Text> : null}
-                  </View>
-                </View>
-              );
-            })}
-          </View>
-        )}
-      </Card>
+      {/* Messages from the bakery */}
+      <View style={{ gap: 10 }}>
+        <Text style={styles.h}>Updates</Text>
+        <View style={styles.chat}>
+          <Bubble title="Order placed" body={`We've received your order for ₹${order.total}.`} at={order.created_at} />
+          {updates
+            .filter((u) => !/ placed$/i.test(u.title))
+            .map((u, i) => (
+              <Animated.View key={u.id} entering={FadeInUp.duration(350).delay(i * 40)}>
+                <Bubble title={u.title} body={u.body} at={u.created_at} />
+              </Animated.View>
+            ))}
+          {!cancelled && order.order_status !== 'delivered' ? (
+            <Text style={styles.live}>
+              <Ionicons name="radio-button-on" size={10} color={C.green} /> Live — new updates appear here automatically
+            </Text>
+          ) : null}
+        </View>
+        <View style={{ flexDirection: 'row', gap: 10 }}>
+          <Button
+            title="Message us"
+            icon="logo-whatsapp"
+            variant="whatsapp"
+            onPress={() => openWhatsApp(`Hi ${business.name}! I have a question about order #${order.order_number}.`)}
+            style={{ flex: 1 }}
+          />
+          <Button title="Call" icon="call-outline" variant="outline" onPress={() => callPhone(business.phones[0])} style={{ flex: 1 }} />
+        </View>
+      </View>
 
+      {/* What you ordered */}
       <Card>
-        <SectionTitle>Items</SectionTitle>
         {order.items.map((i, n) => (
           <View key={n} style={{ gap: 2 }}>
             <Row label={`${i.product_name} × ${i.quantity}`} value={`₹${i.line_total}`} />
@@ -144,56 +227,60 @@ export default function OrderDetailScreen() {
           </View>
         ))}
         <Divider />
-        <Row label="Subtotal" value={`₹${order.subtotal}`} />
         {Number(order.discount) > 0 ? <Row label="Discount" value={`− ₹${order.discount}`} /> : null}
         <Row label="Delivery" value={`₹${order.delivery_charge}`} />
         <Row label="Total" value={`₹${order.total}`} strong />
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Text style={styles.muted}>Payment</Text>
-          <PaymentBadge status={order.payment_status} />
-        </View>
+        <Text style={styles.meta}>{order.delivery_address}</Text>
       </Card>
 
-      <Card>
-        <SectionTitle>Delivery</SectionTitle>
-        <Row label="Name" value={order.customer_name} />
-        <Row label="Phone" value={order.customer_phone} />
-        {order.event_date ? <Row label="When" value={`${formatDate(order.event_date)}${order.event_time ? `, ${formatTime(order.event_time)}` : ''}`} /> : null}
-        <Text style={styles.addr}>{order.delivery_address}</Text>
-        {order.delivery_instructions ? <Text style={styles.meta}>Note: {order.delivery_instructions}</Text> : null}
-      </Card>
-
-      {reorderMsg ? <Notice tone="error" text={reorderMsg} /> : null}
-      <Button title="Order again" icon="refresh" onPress={reorder} />
-      <View style={{ flexDirection: 'row', gap: 10 }}>
-        <Button title="Call shop" icon="call-outline" variant="outline" onPress={() => callPhone(business.phones[0])} style={{ flex: 1 }} />
-        <Button
-          title="WhatsApp"
-          icon="logo-whatsapp"
-          variant="outline"
-          onPress={() => openWhatsApp(`Hi ${business.name}! I have a question about order #${order.order_number}.`)}
-          style={{ flex: 1 }}
-        />
-      </View>
+      {reorderMsg ? <Text style={[styles.meta, { color: C.red }]}>{reorderMsg}</Text> : null}
+      <Button title="Order again" icon="refresh" variant="outline" onPress={reorder} />
     </ScrollView>
   );
 }
 
+function Bubble({ title, body, at }: { title: string; body: string | null; at: string }) {
+  return (
+    <View style={styles.bubbleRow}>
+      <View style={styles.avatar}>
+        <Text style={styles.avatarText}>CH</Text>
+      </View>
+      <View style={styles.bubble}>
+        <Text style={styles.bubbleTitle}>{title}</Text>
+        {body ? <Text style={styles.bubbleBody}>{body}</Text> : null}
+        <Text style={styles.bubbleTime}>{when(at)}</Text>
+      </View>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
-  wrap: { padding: 16, paddingBottom: 40, gap: 14, maxWidth: MAX_W, width: '100%', alignSelf: 'center' },
-  head: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  num: { fontFamily: F.heading, fontSize: 24, color: C.brown },
-  muted: { fontFamily: F.body, fontSize: 14, color: C.muted },
+  wrap: { padding: 16, paddingBottom: 40, gap: 16, maxWidth: MAX_W, width: '100%', alignSelf: 'center' },
+  status: { backgroundColor: C.espresso, borderRadius: R.xl, padding: 18, gap: 14 },
+  statusTop: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  statusIcon: { width: 56, height: 56, borderRadius: 28, backgroundColor: C.gold, alignItems: 'center', justifyContent: 'center' },
+  statusNum: { fontFamily: F.bodyBold, fontSize: 12, color: C.gold, letterSpacing: 1 },
+  statusTitle: { fontFamily: F.heading, fontSize: 22, color: C.cream },
+  statusHint: { fontFamily: F.body, fontSize: 13.5, color: 'rgba(238,225,186,0.8)' },
+  bar: { flexDirection: 'row', gap: 5 },
+  barSeg: { flex: 1, height: 6, borderRadius: 3, backgroundColor: 'rgba(240,215,167,0.2)' },
+  barOn: { backgroundColor: C.gold },
+  barLabels: { flexDirection: 'row', justifyContent: 'space-between', marginTop: -8 },
+  barLabel: { fontFamily: F.body, fontSize: 11.5, color: 'rgba(238,225,186,0.6)' },
+  deliver: { flexDirection: 'row', alignItems: 'center', gap: 8, borderTopWidth: 1, borderTopColor: 'rgba(176,141,87,0.25)', paddingTop: 12 },
+  deliverText: { fontFamily: F.bodyBold, fontSize: 14, color: C.cream },
   payTitle: { fontFamily: F.heading, fontSize: 17, color: C.amber },
   payBody: { fontFamily: F.body, fontSize: 14, color: C.ink, lineHeight: 20 },
-  step: { flexDirection: 'row', gap: 12 },
-  dot: { width: 24, height: 24, borderRadius: 12, borderWidth: 2, borderColor: C.borderStrong, backgroundColor: C.white, alignItems: 'center', justifyContent: 'center' },
-  dotDone: { backgroundColor: C.rose, borderColor: C.rose },
-  dotCurrent: { boxShadow: '0 0 0 5px rgba(195,121,96,0.2)' },
-  line: { width: 2, flex: 1, minHeight: 18, backgroundColor: C.border, marginVertical: 2 },
-  stepLabel: { fontFamily: F.bodyBold, fontSize: 15, color: C.ink, marginTop: 2 },
-  stepHint: { fontFamily: F.body, fontSize: 13, color: C.rose, marginTop: 1 },
-  meta: { fontFamily: F.body, fontSize: 13, color: C.muted },
+  h: { fontFamily: F.heading, fontSize: 21, color: C.brown },
+  chat: { gap: 10 },
+  bubbleRow: { flexDirection: 'row', gap: 10, alignItems: 'flex-end' },
+  avatar: { width: 32, height: 32, borderRadius: 16, backgroundColor: C.espresso, alignItems: 'center', justifyContent: 'center' },
+  avatarText: { color: C.gold, fontFamily: F.bodyBlack, fontSize: 11 },
+  bubble: { flex: 1, backgroundColor: C.white, borderRadius: R.lg, borderBottomLeftRadius: 4, padding: 12, gap: 3, borderWidth: 1, borderColor: C.border },
+  bubbleTitle: { fontFamily: F.bodyBlack, fontSize: 14.5, color: C.ink },
+  bubbleBody: { fontFamily: F.body, fontSize: 14, color: C.ink, lineHeight: 20 },
+  bubbleTime: { fontFamily: F.body, fontSize: 11.5, color: C.muted, alignSelf: 'flex-end' },
+  live: { fontFamily: F.body, fontSize: 12.5, color: C.green, textAlign: 'center' },
+  meta: { fontFamily: F.body, fontSize: 13, color: C.muted, lineHeight: 19 },
   msg: { fontFamily: F.headingItalic, fontSize: 13, color: C.brown },
-  addr: { fontFamily: F.body, fontSize: 14.5, color: C.ink, lineHeight: 20 },
 });

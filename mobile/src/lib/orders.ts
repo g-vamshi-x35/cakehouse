@@ -31,6 +31,17 @@ export const PROGRESS: { status: OrderStatus; label: string; hint: string }[] = 
   { status: 'delivered', label: 'Delivered', hint: 'Enjoy every bite!' },
 ];
 
+/** Friendly message the customer receives when staff move their order to a status. */
+export const CUSTOMER_MESSAGE: Record<OrderStatus, string> = {
+  pending: 'We have your order and will confirm it shortly.',
+  confirmed: 'Your order is confirmed. We’ll start baking it fresh for you.',
+  baking: 'Your order is in the oven right now!',
+  ready: 'Your order is packed and ready.',
+  out_for_delivery: 'Your order is on the way. Please keep your phone nearby.',
+  delivered: 'Delivered! Enjoy every bite — thank you for ordering from Cake House.',
+  cancelled: 'Your order has been cancelled. Message us if you have any questions.',
+};
+
 /** Statuses each staff role may set (matches the database rules). */
 export const STATUS_STEPS: Record<'owner' | 'employee' | 'delivery', OrderStatus[]> = {
   owner: ['pending', 'confirmed', 'baking', 'ready', 'out_for_delivery', 'delivered', 'cancelled'],

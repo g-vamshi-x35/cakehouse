@@ -39,6 +39,7 @@ export default function CheckoutScreen() {
   const [time, setTime] = useState<string | null>(null);
   const [couponInput, setCouponInput] = useState('');
   const [coupon, setCoupon] = useState<Coupon | null>(null);
+  const [showCoupon, setShowCoupon] = useState(false);
   const [couponMsg, setCouponMsg] = useState<{ text: string; ok: boolean } | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -149,7 +150,7 @@ export default function CheckoutScreen() {
           </Pressable>
         ) : null}
 
-        <SectionTitle eyebrow="Step 1">Contact details</SectionTitle>
+        <SectionTitle>Your details</SectionTitle>
         <Field label="Your name" icon="person-outline" value={name} onChangeText={setName} autoComplete="name" textContentType="name" />
         <Field
           label="Phone number"
@@ -162,7 +163,7 @@ export default function CheckoutScreen() {
           maxLength={14}
         />
 
-        <SectionTitle eyebrow="Step 2">Delivery address</SectionTitle>
+        <SectionTitle>Delivery address</SectionTitle>
         {saved.length > 0 && (
           <View style={{ gap: 8 }}>
             {saved.map((a) => (
@@ -209,7 +210,7 @@ export default function CheckoutScreen() {
           </>
         )}
 
-        <SectionTitle eyebrow="Step 3">{cart.hasCakes ? 'Delivery date & time' : 'Delivery time (optional)'}</SectionTitle>
+        <SectionTitle>{cart.hasCakes ? 'When should we deliver?' : 'Delivery time (optional)'}</SectionTitle>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }} style={{ marginHorizontal: -16 }}>
           {days.map((d) => (
             <Chip
@@ -244,16 +245,22 @@ export default function CheckoutScreen() {
           multiline
         />
 
-        <SectionTitle eyebrow="Step 4">Coupon</SectionTitle>
+        {!showCoupon ? (
+          <Pressable onPress={() => setShowCoupon(true)} hitSlop={8} accessibilityRole="button" style={styles.couponLink}>
+            <Ionicons name="pricetag-outline" size={16} color={C.rose} />
+            <Text style={styles.couponLinkText}>Have a coupon code?</Text>
+          </Pressable>
+        ) : (
         <View style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-end' }}>
           <View style={{ flex: 1 }}>
             <Field label="Coupon code" icon="pricetag-outline" value={couponInput} onChangeText={setCouponInput} autoCapitalize="characters" placeholder="Enter code" />
           </View>
           <Button title="Apply" variant="dark" onPress={applyCoupon} style={{ marginBottom: 2 }} />
         </View>
+        )}
         {couponMsg ? <Notice tone={couponMsg.ok ? 'success' : 'error'} text={couponMsg.text} /> : null}
 
-        <SectionTitle eyebrow="Summary">Order summary</SectionTitle>
+        <SectionTitle>Order summary</SectionTitle>
         <Card>
           {cart.items.map((i) => (
             <Row key={i.key} label={`${i.name}${i.weightLabel ? ` (${i.weightLabel})` : ''} × ${i.qty}`} value={`₹${i.unitPrice * i.qty}`} />
@@ -269,10 +276,7 @@ export default function CheckoutScreen() {
         </Card>
         <View style={styles.pay}>
           <Ionicons name="shield-checkmark-outline" size={20} color={C.green} />
-          <Text style={styles.payText}>
-            After placing the order, pay the ₹{advance} advance by GPay / PhonePe / Paytm. We confirm your order as soon as it arrives. Prices are
-            verified by the bakery’s system.
-          </Text>
+          <Text style={styles.payText}>Pay just ₹{advance} now by UPI. The rest on delivery.</Text>
         </View>
         {error ? <Notice tone="error" text={error} /> : null}
       </ScrollView>
@@ -301,6 +305,8 @@ const styles = StyleSheet.create({
   check: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   checkText: { fontFamily: F.body, fontSize: 14, color: C.ink },
   wrapRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  couponLink: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start' },
+  couponLinkText: { fontFamily: F.bodyBold, color: C.rose, fontSize: 14.5 },
   pay: { flexDirection: 'row', gap: 10, padding: 14, backgroundColor: C.greenBg, borderRadius: R.md },
   payText: { flex: 1, fontFamily: F.body, fontSize: 13.5, color: C.ink, lineHeight: 19 },
   bottom: { position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: C.surface, padding: 16, borderTopLeftRadius: R.xl, borderTopRightRadius: R.xl, boxShadow: SHADOW.bar },

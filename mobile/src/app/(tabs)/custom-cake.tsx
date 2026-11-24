@@ -7,22 +7,18 @@ import Animated, { FadeInDown, ZoomIn } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppHeader } from '@/components/app-header';
 import { DateField } from '@/components/date-field';
-import { Button, Card, Chip, Field, Notice, QtyStepper, SectionTitle } from '@/components/ui';
+import { Button, Chip, Field, Notice, SectionTitle } from '@/components/ui';
 import { useAuth } from '@/lib/auth';
 import { business, openWhatsApp } from '@/lib/business';
 import { SiteVideo } from '@/components/site-video';
-import { imageSource } from '@/lib/images';
 import { supabase } from '@/lib/supabase';
 import { C, F, MAX_W, R } from '@/lib/theme';
 import { pickImage, uploadCustomCakeImage, type PickedImage } from '@/lib/upload';
 import { normalizePhone, validateName, validatePhone, ymd } from '@/lib/validation';
 
 // Same options as the website's custom cake form (src/components/sections/CustomCakeForm.tsx).
-const SHAPES = ['Round', 'Square', 'Heart', 'Number / Letter', 'Custom Sculpted'];
 const SIZES = ['0.5 kg', '1 kg', '1.5 kg', '2 kg', '3 kg+'];
 const FLAVOURS = ['Vanilla', 'Chocolate', 'Butterscotch', 'Black Forest', 'Red Velvet', 'Pineapple'];
-const CREAMS = ['Whipped Cream', 'Fondant', 'Buttercream', 'Ganache'];
-const IDEAS = ['Fresh berries & drip finishes', 'Hand-piped rosettes in your colours', 'Names, ages & messages in cream', 'Cartoon, princess & theme toppers'];
 
 export default function CustomCakeScreen() {
   const params = useLocalSearchParams<{ theme?: string }>();
@@ -33,11 +29,8 @@ export default function CustomCakeScreen() {
   const [phoneInput, setPhone] = useState<string | null>(null);
   const name = nameInput ?? profile?.full_name ?? '';
   const phone = phoneInput ?? profile?.phone ?? '';
-  const [shape, setShape] = useState(SHAPES[0]);
   const [size, setSize] = useState(SIZES[1]);
-  const [layers, setLayers] = useState(1);
   const [flavour, setFlavour] = useState(FLAVOURS[0]);
-  const [cream, setCream] = useState(CREAMS[0]);
   const [theme, setTheme] = useState(params.theme ?? '');
   const [message, setMessage] = useState('');
   const [instructions, setInstructions] = useState('');
@@ -92,11 +85,11 @@ export default function CustomCakeScreen() {
       customer_id: session?.user.id ?? null,
       customer_name: name.trim(),
       customer_phone: normalizePhone(phone),
-      shape,
+      shape: null,
       size,
-      layers,
+      layers: null,
       flavour,
-      cream_type: cream,
+      cream_type: null,
       theme: theme.trim() || null,
       inspiration_image_url: photoUrl,
       instructions: notes || null,
@@ -136,7 +129,7 @@ export default function CustomCakeScreen() {
               title="Discuss on WhatsApp"
               icon="logo-whatsapp"
               variant="whatsapp"
-              onPress={() => openWhatsApp(`Hi ${business.name}! I just sent a custom cake request (${theme || shape}, ${size}) from the app.`)}
+              onPress={() => openWhatsApp(`Hi ${business.name}! I just sent a custom cake request (${theme || 'custom design'}, ${size}) from the app.`)}
             />
             <Button title="Design another cake" variant="outline" onPress={reset} />
           </Animated.View>
@@ -151,50 +144,26 @@ export default function CustomCakeScreen() {
         <ScrollView contentContainerStyle={styles.wrap} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
           <AppHeader title="Custom Cake" subtitle="Designed exactly how you imagine" />
 
-          {/* Website's "Your Idea, Our Hands" inspiration section */}
           <Animated.View entering={FadeInDown.duration(500)} style={styles.intro}>
-            <Text style={styles.eyebrow}>Inspiration</Text>
-            <Text style={styles.introTitle}>
-              Your Idea, <Text style={styles.introGold}>Our Hands</Text>
-            </Text>
-            <Text style={styles.introBody}>
-              Tell us the occasion and the feeling — we’ll design the colours, decorations and details to make it unforgettable.
-            </Text>
-            <View style={styles.introMedia}>
-              <SiteVideo name="custom-decorating" style={styles.introVideo} />
-              <Image source={imageSource('/images/stylish/berry-decorating.jpg')} style={[styles.introVideo, { marginTop: 26 }]} contentFit="cover" alt="Decorating a celebration cake with fresh berries" />
+            <SiteVideo name="custom-decorating" style={styles.introVideo} />
+            <View style={{ flex: 1, gap: 6 }}>
+              <Text style={styles.eyebrow}>Made for you</Text>
+              <Text style={styles.introTitle}>
+                Your Idea,{'\n'}
+                <Text style={styles.introGold}>Our Hands</Text>
+              </Text>
+              <Text style={styles.introBody}>Tell us your idea. We’ll send you a price before we bake.</Text>
             </View>
-            <View style={{ gap: 8 }}>
-              {IDEAS.map((idea) => (
-                <View key={idea} style={styles.idea}>
-                  <View style={styles.ideaLine} />
-                  <Text style={styles.ideaText}>{idea}</Text>
-                </View>
-              ))}
-            </View>
-            <Text style={styles.introNote}>Share your idea below — we’ll review it and send you a quote for approval.</Text>
           </Animated.View>
 
-          <SectionTitle eyebrow="Your details">Contact</SectionTitle>
+          <SectionTitle>Your details</SectionTitle>
           <Field label="Your name" icon="person-outline" value={name} onChangeText={setName} autoComplete="name" />
           <Field label="Phone number" icon="call-outline" value={phone} onChangeText={setPhone} keyboardType="phone-pad" autoComplete="tel" maxLength={14} />
 
-          <SectionTitle eyebrow="The cake">Size & shape</SectionTitle>
-          <OptionGroup label="Cake size" options={SIZES} value={size} onChange={setSize} />
-          <OptionGroup label="Shape" options={SHAPES} value={shape} onChange={setShape} />
-          <View style={styles.layerRow}>
-            <View>
-              <Text style={styles.label}>Layers / tiers</Text>
-              <Text style={styles.hint}>1 to 5</Text>
-            </View>
-            <QtyStepper value={layers} onChange={setLayers} min={1} max={5} />
-          </View>
-
-          <SectionTitle eyebrow="Taste">Flavour & finish</SectionTitle>
+          <SectionTitle>Your cake</SectionTitle>
+          <OptionGroup label="Size" options={SIZES} value={size} onChange={setSize} />
           <OptionGroup label="Flavour" options={FLAVOURS} value={flavour} onChange={setFlavour} />
-          <OptionGroup label="Cream / finish" options={CREAMS} value={cream} onChange={setCream} />
 
-          <SectionTitle eyebrow="Design">Theme & message</SectionTitle>
           <Field label="Theme / design" icon="color-palette-outline" value={theme} onChangeText={setTheme} placeholder='e.g. "Superheroes", "Unicorn Garden"' />
           <Field
             label="Message on cake (optional)"
@@ -249,16 +218,9 @@ export default function CustomCakeScreen() {
             placeholder="Colours, characters, toppers, dietary notes…"
           />
 
-          <SectionTitle eyebrow="Delivery">When do you need it?</SectionTitle>
+          <SectionTitle>When do you need it?</SectionTitle>
           <DateField label="Event date" value={date} onChange={setDate} minimumDate={minDate} maximumDate={maxDate} placeholder="Choose a date" />
 
-          <Card style={{ backgroundColor: C.cream }}>
-            <Text style={styles.summaryTitle}>Your design</Text>
-            <Text style={styles.summary}>
-              {size} · {shape} · {layers} layer{layers > 1 ? 's' : ''} · {flavour} · {cream}
-              {theme ? ` · “${theme}”` : ''}
-            </Text>
-          </Card>
 
           {error ? <Notice tone="error" text={error} /> : null}
           <Button title="Send Request for Approval" icon="paper-plane-outline" size="lg" onPress={submit} loading={busy} />
@@ -299,21 +261,15 @@ function UploadTile({ icon, label, onPress }: { icon: 'images-outline' | 'camera
 const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: C.page },
   wrap: { padding: 16, paddingBottom: 40, gap: 16, maxWidth: MAX_W, width: '100%', alignSelf: 'center' },
-  intro: { backgroundColor: C.espresso, borderRadius: R.xl, padding: 20, gap: 12 },
+  intro: { flexDirection: 'row', alignItems: 'center', gap: 16, backgroundColor: C.espresso, borderRadius: R.xl, padding: 12, paddingRight: 16 },
   eyebrow: { fontFamily: F.bodyBold, fontSize: 11, letterSpacing: 4, color: C.gold, textTransform: 'uppercase' },
-  introTitle: { fontFamily: F.heading, fontSize: 30, color: C.cream, lineHeight: 36 },
+  introTitle: { fontFamily: F.heading, fontSize: 24, color: C.cream, lineHeight: 29 },
   introGold: { color: C.gold, fontFamily: F.headingItalic },
   introBody: { fontFamily: F.body, fontSize: 14, color: 'rgba(238,225,186,0.78)', lineHeight: 21 },
-  introMedia: { flexDirection: 'row', gap: 12, marginVertical: 6 },
-  introVideo: { flex: 1, aspectRatio: 9 / 16, maxHeight: 300, borderRadius: R.xl, borderWidth: 1, borderColor: 'rgba(176,141,87,0.3)' },
-  idea: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  ideaLine: { width: 22, height: 1, backgroundColor: C.gold },
-  ideaText: { fontFamily: F.body, fontSize: 14, color: 'rgba(240,215,167,0.92)' },
-  introNote: { fontFamily: F.headingItalic, fontSize: 13.5, color: C.gold, marginTop: 4 },
+  introVideo: { width: 104, height: 150, borderRadius: R.lg },
   label: { color: C.brownDark, fontFamily: F.bodyBold, fontSize: 13.5 },
   hint: { color: C.muted, fontFamily: F.body, fontSize: 12.5 },
   wrapRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  layerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   uploadRow: { flexDirection: 'row', gap: 10 },
   upload: {
     flex: 1,
@@ -335,8 +291,6 @@ const styles = StyleSheet.create({
   photoBadge: { position: 'absolute', left: 10, bottom: 10, flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: C.white, borderRadius: R.pill, paddingHorizontal: 10, paddingVertical: 4 },
   photoBadgeText: { fontFamily: F.bodyBold, color: C.green, fontSize: 12.5 },
   photoRemove: { position: 'absolute', right: 10, top: 10, width: 34, height: 34, borderRadius: 17, backgroundColor: 'rgba(43,26,21,0.7)', alignItems: 'center', justifyContent: 'center' },
-  summaryTitle: { fontFamily: F.heading, fontSize: 17, color: C.brown },
-  summary: { fontFamily: F.body, fontSize: 14, color: C.ink, lineHeight: 20 },
   done: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 14, maxWidth: MAX_W, width: '100%', alignSelf: 'center' },
   doneIcon: { width: 110, height: 110, borderRadius: 55, backgroundColor: C.cream, alignItems: 'center', justifyContent: 'center' },
   doneTitle: { fontFamily: F.heading, fontSize: 30, color: C.brown },

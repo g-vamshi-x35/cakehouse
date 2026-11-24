@@ -11,16 +11,9 @@ import { CartBar } from '@/components/cart-bar';
 import { ProductCard } from '@/components/product-card';
 import { Chip, EmptyState, ErrorState, Skeleton, tap } from '@/components/ui';
 import { imageSource } from '@/lib/images';
-import { activeTags, CATEGORIES, fetchProducts, tagLabel, type Product } from '@/lib/products';
+import { CATEGORIES, fetchProducts, tagLabel, type Product } from '@/lib/products';
 import { C, F, MAX_W, R } from '@/lib/theme';
 
-type Sort = 'featured' | 'low' | 'high' | 'rating';
-const SORTS: { key: Sort; label: string }[] = [
-  { key: 'featured', label: 'Recommended' },
-  { key: 'low', label: 'Price: Low' },
-  { key: 'high', label: 'Price: High' },
-  { key: 'rating', label: 'Top rated' },
-];
 
 export default function MenuScreen() {
   const params = useLocalSearchParams<{ category?: string; tag?: string }>();
@@ -29,7 +22,6 @@ export default function MenuScreen() {
   const [category, setCategory] = useState(params.category ?? 'all');
   const [tag, setTag] = useState<string | null>(params.tag ?? null);
   const [query, setQuery] = useState('');
-  const [sort, setSort] = useState<Sort>('featured');
   const [refreshing, setRefreshing] = useState(false);
   const { width } = useWindowDimensions();
   const cardW = (Math.min(width, MAX_W) - 16 * 2 - 12) / 2;
@@ -71,16 +63,9 @@ export default function MenuScreen() {
         (!tag || p.tags.includes(tag)) &&
         (!q || p.name.toLowerCase().includes(q) || p.description.toLowerCase().includes(q) || p.flavours.some((f) => f.toLowerCase().includes(q)))
     );
-    if (sort === 'low') return [...list].sort((a, b) => a.price - b.price);
-    if (sort === 'high') return [...list].sort((a, b) => b.price - a.price);
-    if (sort === 'rating') return [...list].sort((a, b) => b.avgRating - a.avgRating || b.reviewCount - a.reviewCount);
     return list;
-  }, [products, category, tag, query, sort]);
-  const occasions = useMemo(() => {
-    const list = activeTags(products ?? []);
-    // Keep the active occasion visible at the start of the row.
-    return tag ? [tag, ...list.filter((t) => t !== tag)] : list;
-  }, [products, tag]);
+  }, [products, category, tag, query]);
+
 
   const header = (
     <View style={{ gap: 14, paddingBottom: 4 }}>
@@ -126,24 +111,6 @@ export default function MenuScreen() {
           <Chip key={c.slug} label={c.name} selected={category === c.slug} onPress={() => setCategory(c.slug)} />
         ))}
       </ScrollView>
-      {occasions.length > 0 && (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips} style={styles.bleed}>
-          {occasions.map((t) => (
-            <Pressable
-              key={t}
-              onPress={() => {
-                tap();
-                setTag(tag === t ? null : t);
-              }}
-              style={[styles.occ, tag === t && styles.occOn]}
-              accessibilityRole="button"
-              accessibilityState={{ selected: tag === t }}>
-              <Text style={[styles.occText, tag === t && { color: C.cream }]}>{tagLabel(t)}</Text>
-              {tag === t ? <Ionicons name="close" size={13} color={C.cream} /> : null}
-            </Pressable>
-          ))}
-        </ScrollView>
-      )}
       {tag || query ? (
         <View style={styles.resultRow}>
           <Text style={styles.resultText}>
@@ -161,13 +128,6 @@ export default function MenuScreen() {
           </Pressable>
         </View>
       ) : null}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips} style={styles.bleed}>
-        {SORTS.map((s) => (
-          <Pressable key={s.key} onPress={() => setSort(s.key)} style={[styles.sort, sort === s.key && styles.sortOn]} accessibilityRole="button" accessibilityState={{ selected: sort === s.key }}>
-            <Animated.Text style={[styles.sortText, sort === s.key && { color: C.rose }]}>{s.label}</Animated.Text>
-          </Pressable>
-        ))}
-      </ScrollView>
     </View>
   );
 
@@ -255,17 +215,11 @@ const styles = StyleSheet.create({
     minHeight: 50,
   },
   searchInput: { flex: 1, fontFamily: F.body, fontSize: 15.5, color: C.ink, paddingVertical: 12 },
-  sort: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: R.pill },
-  sortOn: { backgroundColor: C.roseSoft },
-  sortText: { fontFamily: F.bodyBold, fontSize: 13, color: C.muted },
   premium: { height: 112, borderRadius: R.xl, overflow: 'hidden', backgroundColor: C.espresso, justifyContent: 'center' },
   premiumImg: { position: 'absolute', right: 0, top: 0, bottom: 0, width: '55%' },
   premiumEyebrow: { color: C.gold, fontFamily: F.bodyBold, fontSize: 10, letterSpacing: 2.6, textTransform: 'uppercase' },
   premiumTitle: { color: C.cream, fontFamily: F.heading, fontSize: 20, lineHeight: 26 },
   premiumLink: { color: 'rgba(240,215,167,0.85)', fontFamily: F.bodyBold, fontSize: 12.5, marginTop: 2 },
-  occ: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 7, borderRadius: R.pill, borderWidth: 1, borderColor: C.goldLine, backgroundColor: 'rgba(255,255,255,0.6)' },
-  occOn: { backgroundColor: C.espresso, borderColor: C.espresso },
-  occText: { fontFamily: F.bodyBold, fontSize: 12.5, color: C.brown },
   resultRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   resultText: { fontFamily: F.body, fontSize: 13.5, color: C.muted },
   resultClear: { fontFamily: F.bodyBold, fontSize: 13.5, color: C.rose },
