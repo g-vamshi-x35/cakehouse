@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import PageHero from "@/components/ui/PageHero";
 import AboutStory from "@/components/sections/AboutStory";
+import KitchenFilm from "@/components/sections/KitchenFilm";
 import ValuesGrid from "@/components/sections/ValuesGrid";
 import TeamSection from "@/components/sections/TeamSection";
 import Gallery from "@/components/sections/Gallery";
@@ -22,6 +23,7 @@ export default function AboutPage() {
         subtitle="Every cake that leaves our kitchen carries the same promise: fresh ingredients, honest craft, and great taste in every bite."
       />
       <AboutStory />
+      <KitchenFilm />
       <ValuesGrid />
       <TeamSection />
       <Gallery />

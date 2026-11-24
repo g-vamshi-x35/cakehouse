@@ -421,6 +421,30 @@ export interface Database {
         { key: string; value: Record<string, unknown> | null },
         { key: string; value?: Record<string, unknown> | null }
       >;
+      premium_cakes: TableDef<
+        {
+          id: string;
+          slug: string;
+          name: string;
+          images: string[];
+          price: number | null;
+          price_label: string | null;
+          is_active: boolean;
+          sort_order: number;
+          updated_at: string;
+        },
+        {
+          id?: string;
+          slug: string;
+          name: string;
+          images?: string[];
+          price?: number | null;
+          price_label?: string | null;
+          is_active?: boolean;
+          sort_order?: number;
+          updated_at?: string;
+        }
+      >;
     };
     Views: Record<string, never>;
     Functions: {
